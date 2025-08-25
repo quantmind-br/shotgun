@@ -1,0 +1,15 @@
+test_design:
+  scenarios_total: 24
+  by_level:
+    unit: 14
+    integration: 7
+    e2e: 3
+  by_priority:
+    p0: 10
+    p1: 8
+    p2: 4
+    p3: 2
+  coverage_gaps: []  # All ACs have test coverage
+  performance_tests: 2
+  risk_mitigation_tests: 6
+  cross_platform_validation: true
