@@ -75,6 +75,12 @@ deps:
 	go mod tidy
 	go mod download
 
+# Install binary to system
+.PHONY: install
+install: build
+	@install -d $(DESTDIR)/usr/local/bin
+	@install -m 755 $(BINARY_PATH) $(DESTDIR)/usr/local/bin/
+
 # Help
 .PHONY: help
 help:
@@ -92,4 +98,5 @@ help:
 	@echo "  vet          - Run Go vet"
 	@echo "  lint         - Run fmt and vet"
 	@echo "  deps         - Install/update dependencies"
+	@echo "  install      - Install binary to system"
 	@echo "  help         - Show this help"

@@ -6,10 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
-
-	"github.com/h2non/filetype"
 
 	"github.com/user/shotgun-cli/internal/models"
 )
@@ -19,82 +16,84 @@ const (
 	DEFAULT_TIMEOUT = 5 * time.Minute
 )
 
-// ConcurrentFileScanner implements the Scanner interface with concurrent processing
-type ConcurrentFileScanner struct {
-	options    ScanOptions
-	workerPool *WorkerPool
-	mu         sync.RWMutex
-	started    bool
+// Scanner implements the core file scanning functionality with concurrency
+type Scanner struct {
+	ignorer  *Ignorer
+	detector *BinaryDetector
+	workers  int
+	options  ScanOptions
 }
 
-// NewConcurrentFileScanner creates a new concurrent file scanner with default options
-func NewConcurrentFileScanner() Scanner {
-	return NewSimpleConcurrentFileScanner()
-}
+// Option defines functional options for Scanner configuration
+type Option func(*Scanner) error
 
-// NewConcurrentFileScannerWithOptions creates a new concurrent file scanner with custom options
-func NewConcurrentFileScannerWithOptions(options ScanOptions) Scanner {
-	return NewSimpleConcurrentFileScannerWithOptions(options)
-}
+// New creates a new Scanner with functional options pattern
+func New(opts ...Option) (*Scanner, error) {
+	s := &Scanner{
+		workers: runtime.NumCPU(),
+		options: DefaultScanOptions(),
+	}
 
-// ScanDirectory implements Scanner.ScanDirectory
-func (cfs *ConcurrentFileScanner) ScanDirectory(ctx context.Context, rootPath string) (<-chan ScanResult, error) {
-	// Validate and clean the root path
-	cleanPath := filepath.Clean(rootPath)
-	if !filepath.IsAbs(cleanPath) {
-		var err error
-		cleanPath, err = filepath.Abs(cleanPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve absolute path for %s: %w", rootPath, err)
+	// Apply all options
+	for _, opt := range opts {
+		if err := opt(s); err != nil {
+			return nil, fmt.Errorf("failed to apply option: %w", err)
 		}
 	}
 
-	// Verify the directory exists
-	info, err := os.Stat(cleanPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to stat directory %s: %w", cleanPath, err)
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("path %s is not a directory", cleanPath)
-	}
-
-	// Set up timeout context if specified
-	scanCtx := ctx
-	if cfs.options.Timeout > 0 {
-		var cancel context.CancelFunc
-		scanCtx, cancel = context.WithTimeout(ctx, cfs.options.Timeout)
-		defer cancel()
-	}
-
-	// Create and start worker pool
-	processor := &FileProcessor{
-		options: cfs.options,
-	}
-	
-	workerCount := cfs.options.WorkerCount
-	if workerCount <= 0 {
-		workerCount = runtime.NumCPU()
-	}
-	
-	wp := NewWorkerPool(workerCount, cfs.options.BufferSize, processor)
-	wp.Start()
-
-	// Start scanning in a separate goroutine
-	resultChan := make(chan ScanResult, cfs.options.BufferSize)
-	
-	go func() {
-		defer close(resultChan)
-		defer wp.Stop()
-		
-		cfs.scanWithWorkerPool(scanCtx, cleanPath, wp, resultChan)
-	}()
-
-	return resultChan, nil
+	return s, nil
 }
 
-// ScanDirectorySync implements Scanner.ScanDirectorySync
-func (cfs *ConcurrentFileScanner) ScanDirectorySync(ctx context.Context, rootPath string) ([]*models.FileNode, error) {
-	resultChan, err := cfs.ScanDirectory(ctx, rootPath)
+// WithWorkers sets the number of worker goroutines
+func WithWorkers(workers int) Option {
+	return func(s *Scanner) error {
+		if workers <= 0 {
+			return fmt.Errorf("worker count must be positive, got %d", workers)
+		}
+		s.workers = workers
+		s.options.WorkerCount = workers
+		return nil
+	}
+}
+
+// WithIgnorer sets a custom ignorer
+func WithIgnorer(ignorer *Ignorer) Option {
+	return func(s *Scanner) error {
+		s.ignorer = ignorer
+		return nil
+	}
+}
+
+// WithBinaryDetector sets a custom binary detector
+func WithBinaryDetector(detector *BinaryDetector) Option {
+	return func(s *Scanner) error {
+		s.detector = detector
+		return nil
+	}
+}
+
+// WithOptions sets scan options
+func WithOptions(options ScanOptions) Option {
+	return func(s *Scanner) error {
+		s.options = options
+		if options.WorkerCount > 0 {
+			s.workers = options.WorkerCount
+		}
+		return nil
+	}
+}
+
+// ScanDirectory implements the main scanning functionality
+func (s *Scanner) ScanDirectory(ctx context.Context, rootPath string) (<-chan ScanResult, error) {
+	// For now, delegate to the working SimpleConcurrentFileScanner implementation
+	// while maintaining the new functional options interface
+	simpleScanner := NewSimpleConcurrentFileScannerWithOptions(s.options)
+	return simpleScanner.ScanDirectory(ctx, rootPath)
+}
+
+// ScanDirectorySync scans synchronously and returns all files at once
+func (s *Scanner) ScanDirectorySync(ctx context.Context, rootPath string) ([]*models.FileNode, error) {
+	resultChan, err := s.ScanDirectory(ctx, rootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -118,95 +117,71 @@ func (cfs *ConcurrentFileScanner) ScanDirectorySync(ctx context.Context, rootPat
 	return results, nil
 }
 
-// scanWithWorkerPool orchestrates the concurrent scanning process
-func (cfs *ConcurrentFileScanner) scanWithWorkerPool(ctx context.Context, rootPath string, wp *WorkerPool, resultChan chan<- ScanResult) {
-	// Submit initial job - this will process the entire directory tree
-	wp.SubmitJob(Job{Path: rootPath, Depth: 0})
-	
-	// Since we only submit one job (which processes everything recursively),
-	// we need to wait until that job completes
-	jobsSubmitted := 1
-	jobsCompleted := 0
-	
-	for jobsCompleted < jobsSubmitted {
+// scanDirectoryRecursive performs the actual directory scanning
+func (s *Scanner) scanDirectoryRecursive(ctx context.Context, rootPath string, resultChan chan<- ScanResult) {
+	// Use a simple approach: walk the directory and process files directly
+	err := filepath.WalkDir(rootPath, func(path string, d os.DirEntry, err error) error {
 		select {
-		case result, ok := <-wp.Results():
-			if !ok {
-				// Worker pool results channel closed
-				return
-			}
-			
-			// Send result to output channel
-			select {
-			case resultChan <- result:
-			case <-ctx.Done():
-				return
-			}
-			
-			// The FileProcessor returns multiple results per job,
-			// but we can't easily track when a job is "done" in this model.
-			// For simplicity, let's use a timeout-based approach
-			
 		case <-ctx.Done():
-			return
+			return ctx.Err()
+		default:
+		}
+
+		if err != nil {
+			// Send error to result channel and continue
+			select {
+			case resultChan <- ScanResult{Error: fmt.Errorf("failed to access %s: %w", path, err)}:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			return nil // Continue walking
+		}
+
+		// Check if path should be ignored
+		if s.ignorer != nil && s.ignorer.IsIgnored(path) {
+			if d.IsDir() {
+				return filepath.SkipDir // Skip entire directory
+			}
+			return nil // Skip this file
+		}
+
+		// Process the path
+		s.processPath(ctx, path, resultChan)
+		return nil
+	})
+
+	if err != nil && err != context.Canceled {
+		select {
+		case resultChan <- ScanResult{Error: fmt.Errorf("directory walk failed: %w", err)}:
+		case <-ctx.Done():
 		}
 	}
-}
-
-// FileProcessor implements JobProcessor for file scanning operations
-type FileProcessor struct {
-	options ScanOptions
-}
-
-// ProcessJob implements JobProcessor.ProcessJob
-func (fp *FileProcessor) ProcessJob(ctx context.Context, job Job) []ScanResult {
-	var results []ScanResult
-	
-	// Check depth limits
-	if fp.options.MaxDepth > 0 && job.Depth >= fp.options.MaxDepth {
-		return results
-	}
-	
-	// Process the current path
-	fileNode, err := fp.processPath(ctx, job.Path)
-	if err != nil {
-		results = append(results, ScanResult{Error: err})
-		return results
-	}
-	
-	if fileNode != nil {
-		results = append(results, ScanResult{FileNode: fileNode})
-		
-		// If it's a directory, process its contents recursively
-		if fileNode.IsDirectory {
-			childResults := fp.processDirectory(ctx, job.Path, job.Depth+1)
-			results = append(results, childResults...)
-		}
-	}
-	
-	return results
 }
 
 // processPath processes a single file or directory path
-func (fp *FileProcessor) processPath(ctx context.Context, path string) (*models.FileNode, error) {
+func (s *Scanner) processPath(ctx context.Context, path string, resultChan chan<- ScanResult) {
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return
 	default:
 	}
-	
+
 	// Get file info
 	info, err := os.Lstat(path) // Use Lstat to not follow symlinks
 	if err != nil {
-		return nil, fmt.Errorf("failed to stat %s: %w", path, err)
+		select {
+		case resultChan <- ScanResult{Error: fmt.Errorf("failed to stat %s: %w", path, err)}:
+		case <-ctx.Done():
+		}
+		return
 	}
-	
+
 	// Handle symbolic links
-	if info.Mode()&os.ModeSymlink != 0 && !fp.options.FollowSymlinks {
+	if info.Mode()&os.ModeSymlink != 0 && !s.options.FollowSymlinks {
 		// Skip symbolic links if not following them
-		return nil, nil
+		return
 	}
-	
+
 	// Create FileNode
 	node := &models.FileNode{
 		Path:        path,
@@ -214,64 +189,17 @@ func (fp *FileProcessor) processPath(ctx context.Context, path string) (*models.
 		IsDirectory: info.IsDir(),
 		Size:        info.Size(),
 		ModTime:     info.ModTime(),
+		IsIgnored:   s.ignorer != nil && s.ignorer.IsIgnored(path),
 	}
-	
+
 	// Detect binary files for regular files
-	if !node.IsDirectory && fp.options.DetectBinary && node.Size < MAX_FILE_SIZE_FOR_DETECTION {
-		node.IsBinary = fp.isBinaryFile(path)
+	if !node.IsDirectory && s.options.DetectBinary && s.detector != nil {
+		node.IsBinary = s.detector.IsBinary(path)
 	}
-	
-	return node, nil
-}
 
-// processDirectory processes the contents of a directory
-func (fp *FileProcessor) processDirectory(ctx context.Context, dirPath string, depth int) []ScanResult {
-	var results []ScanResult
-	
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		results = append(results, ScanResult{
-			Error: fmt.Errorf("failed to read directory %s: %w", dirPath, err),
-		})
-		return results
+	// Send result
+	select {
+	case resultChan <- ScanResult{FileNode: node}:
+	case <-ctx.Done():
 	}
-	
-	for _, entry := range entries {
-		select {
-		case <-ctx.Done():
-			return results
-		default:
-		}
-		
-		childPath := filepath.Join(dirPath, entry.Name())
-		childJob := Job{Path: childPath, Depth: depth}
-		
-		// Process child synchronously for simplicity
-		// In a more complex implementation, we could submit child jobs back to the pool
-		childResults := fp.ProcessJob(ctx, childJob)
-		results = append(results, childResults...)
-	}
-	
-	return results
-}
-
-// isBinaryFile determines if a file is binary using filetype detection
-func (fp *FileProcessor) isBinaryFile(path string) bool {
-	file, err := os.Open(path)
-	if err != nil {
-		// If we can't open the file, assume it's not binary
-		return false
-	}
-	defer file.Close()
-	
-	// Read first 262 bytes for filetype detection
-	buffer := make([]byte, 262)
-	n, err := file.Read(buffer)
-	if err != nil || n == 0 {
-		return false
-	}
-	
-	// Use filetype library to detect if it's a known binary type
-	_, err = filetype.Match(buffer[:n])
-	return err == nil // If filetype can identify it, it's likely binary
 }

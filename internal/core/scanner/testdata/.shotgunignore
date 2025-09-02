@@ -1,0 +1,4 @@
+# Test .shotgunignore patterns (takes priority)
+*.cache
+temp/
+debug.log

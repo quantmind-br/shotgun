@@ -42,7 +42,7 @@ func BenchmarkConcurrentFileScanner_Small(b *testing.B) {
 	tempDir := createTestDirectory(b, 100) // 100 files
 	defer os.RemoveAll(tempDir)
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := func() ScannerInterface { s, _ := New(); return s }()
 	ctx := context.Background()
 	
 	b.ResetTimer()
@@ -62,7 +62,7 @@ func BenchmarkConcurrentFileScanner_Medium(b *testing.B) {
 	tempDir := createTestDirectory(b, 1000) // 1000 files
 	defer os.RemoveAll(tempDir)
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := func() ScannerInterface { s, _ := New(); return s }()
 	ctx := context.Background()
 	
 	b.ResetTimer()
@@ -87,7 +87,7 @@ func BenchmarkConcurrentFileScanner_Large(b *testing.B) {
 	tempDir := createTestDirectory(b, 5000) // 5000 files
 	defer os.RemoveAll(tempDir)
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := func() ScannerInterface { s, _ := New(); return s }()
 	ctx := context.Background()
 	
 	b.ResetTimer()
@@ -113,7 +113,7 @@ func BenchmarkConcurrentFileScanner_WorkerCounts(b *testing.B) {
 		b.Run(fmt.Sprintf("workers_%d", workerCount), func(b *testing.B) {
 			options := DefaultScanOptions()
 			options.WorkerCount = workerCount
-			scanner := NewConcurrentFileScannerWithOptions(options)
+			scanner := func(opts ScanOptions) ScannerInterface { s, _ := New(WithOptions(opts)); return s }(options)
 			ctx := context.Background()
 			
 			b.ResetTimer()
@@ -141,7 +141,7 @@ func BenchmarkConcurrentFileScanner_BufferSizes(b *testing.B) {
 		b.Run(fmt.Sprintf("buffer_%d", bufferSize), func(b *testing.B) {
 			options := DefaultScanOptions()
 			options.BufferSize = bufferSize
-			scanner := NewConcurrentFileScannerWithOptions(options)
+			scanner := func(opts ScanOptions) ScannerInterface { s, _ := New(WithOptions(opts)); return s }(options)
 			ctx := context.Background()
 			
 			b.ResetTimer()
@@ -176,7 +176,7 @@ func BenchmarkConcurrentFileScanner_BinaryDetection(b *testing.B) {
 	b.Run("with_binary_detection", func(b *testing.B) {
 		options := DefaultScanOptions()
 		options.DetectBinary = true
-		scanner := NewConcurrentFileScannerWithOptions(options)
+		scanner := func(opts ScanOptions) ScannerInterface { s, _ := New(WithOptions(opts)); return s }(options)
 		ctx := context.Background()
 		
 		b.ResetTimer()
@@ -195,7 +195,7 @@ func BenchmarkConcurrentFileScanner_BinaryDetection(b *testing.B) {
 	b.Run("without_binary_detection", func(b *testing.B) {
 		options := DefaultScanOptions()
 		options.DetectBinary = false
-		scanner := NewConcurrentFileScannerWithOptions(options)
+		scanner := func(opts ScanOptions) ScannerInterface { s, _ := New(WithOptions(opts)); return s }(options)
 		ctx := context.Background()
 		
 		b.ResetTimer()
@@ -216,7 +216,7 @@ func BenchmarkConcurrentFileScanner_StreamingVsSync(b *testing.B) {
 	tempDir := createTestDirectory(b, 1000)
 	defer os.RemoveAll(tempDir)
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := func() ScannerInterface { s, _ := New(); return s }()
 	
 	b.Run("sync_mode", func(b *testing.B) {
 		ctx := context.Background()
@@ -313,11 +313,11 @@ func BenchmarkFileTypeDetection(b *testing.B) {
 		b.Fatalf("Failed to create binary file: %v", err)
 	}
 	
-	processor := &FileProcessor{options: DefaultScanOptions()}
+	detector := NewBinaryDetector()
 	
 	b.Run("text_file", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			isBinary := processor.isBinaryFile(textFile)
+			isBinary := detector.IsBinary(textFile)
 			if isBinary {
 				b.Error("Text file detected as binary")
 			}
@@ -326,7 +326,7 @@ func BenchmarkFileTypeDetection(b *testing.B) {
 	
 	b.Run("binary_file", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			isBinary := processor.isBinaryFile(binaryFile)
+			isBinary := detector.IsBinary(binaryFile)
 			if !isBinary {
 				b.Error("Binary file not detected as binary")
 			}

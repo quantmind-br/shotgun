@@ -1,0 +1,8 @@
+# Test .gitignore patterns
+*.tmp
+*.log
+!important.log
+build/
+node_modules/
+/root-level.txt
+**/*.bin

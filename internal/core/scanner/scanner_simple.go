@@ -8,25 +8,27 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/h2non/filetype"
-
 	"github.com/user/shotgun-cli/internal/models"
 )
 
 // SimpleConcurrentFileScanner is a simpler implementation using goroutines and channels
 type SimpleConcurrentFileScanner struct {
-	options ScanOptions
+	options  ScanOptions
+	ignorer  *Ignorer
+	detector *BinaryDetector
 }
 
 // NewSimpleConcurrentFileScanner creates a new simple concurrent file scanner
-func NewSimpleConcurrentFileScanner() Scanner {
+func NewSimpleConcurrentFileScanner() ScannerInterface {
 	return NewSimpleConcurrentFileScannerWithOptions(DefaultScanOptions())
 }
 
 // NewSimpleConcurrentFileScannerWithOptions creates a new scanner with custom options
-func NewSimpleConcurrentFileScannerWithOptions(options ScanOptions) Scanner {
+func NewSimpleConcurrentFileScannerWithOptions(options ScanOptions) ScannerInterface {
 	return &SimpleConcurrentFileScanner{
-		options: options,
+		options:  options,
+		ignorer:  nil, // Will be initialized on first scan
+		detector: NewBinaryDetector(),
 	}
 }
 
@@ -49,6 +51,17 @@ func (scfs *SimpleConcurrentFileScanner) ScanDirectory(ctx context.Context, root
 	}
 	if !info.IsDir() {
 		return nil, fmt.Errorf("path %s is not a directory", cleanPath)
+	}
+
+	// Initialize ignorer if not set
+	if scfs.ignorer == nil {
+		ignorer, err := NewIgnorer(cleanPath)
+		if err != nil {
+			// Don't fail if ignorer can't be created, just continue without it
+			scfs.ignorer = nil
+		} else {
+			scfs.ignorer = ignorer
+		}
 	}
 
 	// Create result channel
@@ -160,6 +173,17 @@ func (scfs *SimpleConcurrentFileScanner) discoverPaths(ctx context.Context, path
 
 		childPath := filepath.Join(path, entry.Name())
 		
+		// Check if path should be ignored
+		if scfs.ignorer != nil && scfs.ignorer.IsIgnored(childPath) {
+			if entry.IsDir() {
+				// Skip entire directory
+				continue
+			} else {
+				// Skip this file
+				continue
+			}
+		}
+		
 		// Submit all paths (files and directories) for processing
 		scfs.discoverPaths(ctx, childPath, depth+1, pathChan)
 	}
@@ -220,33 +244,14 @@ func (scfs *SimpleConcurrentFileScanner) processPath(ctx context.Context, path s
 		IsDirectory: info.IsDir(),
 		Size:        info.Size(),
 		ModTime:     info.ModTime(),
+		IsIgnored:   scfs.ignorer != nil && scfs.ignorer.IsIgnored(path),
 	}
 
 	// Detect binary files for regular files
-	if !node.IsDirectory && scfs.options.DetectBinary && node.Size < MAX_FILE_SIZE_FOR_DETECTION {
-		node.IsBinary = scfs.isBinaryFile(path)
+	if !node.IsDirectory && scfs.options.DetectBinary && scfs.detector != nil {
+		node.IsBinary = scfs.detector.IsBinary(path)
 	}
 
 	return ScanResult{FileNode: node}
 }
 
-// isBinaryFile determines if a file is binary using filetype detection
-func (scfs *SimpleConcurrentFileScanner) isBinaryFile(path string) bool {
-	file, err := os.Open(path)
-	if err != nil {
-		// If we can't open the file, assume it's not binary
-		return false
-	}
-	defer file.Close()
-
-	// Read first 262 bytes for filetype detection
-	buffer := make([]byte, 262)
-	n, err := file.Read(buffer)
-	if err != nil || n == 0 {
-		return false
-	}
-
-	// Use filetype library to detect if it's a known binary type
-	_, err = filetype.Match(buffer[:n])
-	return err == nil // If filetype can identify it, it's likely binary
-}

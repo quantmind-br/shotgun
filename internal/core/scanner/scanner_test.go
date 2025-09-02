@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewConcurrentFileScanner(t *testing.T) {
-	scanner := NewConcurrentFileScanner()
+	scanner := NewSimpleConcurrentFileScanner()
 	if scanner == nil {
 		t.Fatal("NewConcurrentFileScanner returned nil")
 	}
@@ -29,17 +29,17 @@ func TestNewConcurrentFileScanner(t *testing.T) {
 	}
 }
 
-func TestNewConcurrentFileScannerWithOptions(t *testing.T) {
+func TestNewSimpleConcurrentFileScannerWithOptions(t *testing.T) {
 	options := ScanOptions{
 		MaxDepth:     5,
 		BufferSize:   50,
 		DetectBinary: false,
 	}
 	
-	scanner := NewConcurrentFileScannerWithOptions(options)
+	scanner := NewSimpleConcurrentFileScannerWithOptions(options)
 	cfs, ok := scanner.(*SimpleConcurrentFileScanner)
 	if !ok {
-		t.Fatal("NewConcurrentFileScannerWithOptions did not return *SimpleConcurrentFileScanner")
+		t.Fatal("NewSimpleConcurrentFileScannerWithOptions did not return *SimpleConcurrentFileScanner")
 	}
 	
 	if cfs.options.MaxDepth != 5 {
@@ -118,7 +118,7 @@ func TestConcurrentFileScanner_ScanDirectorySync(t *testing.T) {
 	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := NewConcurrentFileScannerWithOptions(tt.options)
+			scanner := NewSimpleConcurrentFileScannerWithOptions(tt.options)
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 			
@@ -176,7 +176,7 @@ func TestConcurrentFileScanner_ScanDirectory(t *testing.T) {
 		}
 	}
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := NewSimpleConcurrentFileScanner()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	
@@ -217,7 +217,7 @@ func TestConcurrentFileScanner_ScanDirectory(t *testing.T) {
 }
 
 func TestConcurrentFileScanner_InvalidDirectory(t *testing.T) {
-	scanner := NewConcurrentFileScanner()
+	scanner := NewSimpleConcurrentFileScanner()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	
@@ -258,7 +258,7 @@ func TestConcurrentFileScanner_ContextCancellation(t *testing.T) {
 		}
 	}
 	
-	scanner := NewConcurrentFileScanner()
+	scanner := NewSimpleConcurrentFileScanner()
 	ctx, cancel := context.WithCancel(context.Background())
 	
 	resultChan, err := scanner.ScanDirectory(ctx, tempDir)

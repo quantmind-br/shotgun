@@ -12,8 +12,8 @@ const (
 	MAX_FILE_SIZE_FOR_DETECTION = 1024 * 1024
 )
 
-// Scanner defines the interface for file scanning operations
-type Scanner interface {
+// ScannerInterface defines the interface for file scanning operations
+type ScannerInterface interface {
 	// ScanDirectory scans a directory and returns a stream of discovered files
 	ScanDirectory(ctx context.Context, rootPath string) (<-chan ScanResult, error)
 	
