@@ -11,7 +11,7 @@ import (
 
 	"github.com/h2non/filetype"
 
-	"shotgun-cli-v3/internal/models"
+	"github.com/user/shotgun-cli/internal/models"
 )
 
 const (

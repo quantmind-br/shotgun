@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"shotgun-cli-v3/internal/models"
+	"github.com/user/shotgun-cli/internal/models"
 )
 
 // createTestDirectory creates a directory structure with the specified number of files
