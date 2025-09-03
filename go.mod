@@ -3,6 +3,7 @@ module github.com/user/shotgun-cli
 go 1.18
 
 require (
+	github.com/BurntSushi/toml v1.5.0
 	github.com/charmbracelet/bubbletea v1.1.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/h2non/filetype v1.1.3
@@ -10,7 +11,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
 	github.com/charmbracelet/bubbles v0.20.0 // indirect

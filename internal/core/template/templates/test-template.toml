@@ -1,0 +1,28 @@
+id = "test-template"
+name = "Test Template"
+version = "1.0.0"
+description = "A simple test template"
+author = "Shotgun Team"
+tags = ["test", "example"]
+content = """
+# Test Template
+
+Hello {{name}}!
+
+This is a test template with priority: {{priority}}
+"""
+
+[variables.name]
+name = "name"
+type = "text"
+required = true
+placeholder = "Enter your name"
+min_length = 2
+max_length = 50
+
+[variables.priority]
+name = "priority"
+type = "choice"
+required = false
+default = "medium"
+options = ["low", "medium", "high", "critical"]
