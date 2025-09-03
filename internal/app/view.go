@@ -9,30 +9,30 @@ import (
 // View implements tea.Model interface
 func (a *AppState) View() string {
 	var content strings.Builder
-	
+
 	// Render progress indicator at top
 	content.WriteString(a.Progress.View())
 	content.WriteString("\n")
-	
+
 	// Show error if present
 	if a.Error != nil {
 		content.WriteString(a.renderError())
 		content.WriteString("\n")
 	}
-	
+
 	// Render current screen content
 	content.WriteString(a.renderCurrentScreen())
-	
+
 	// Render help dialog if showing
 	if a.ShowingHelp {
 		return a.renderHelpDialog()
 	}
-	
+
 	// Render exit dialog if showing
 	if a.ShowingExit {
 		return a.renderExitDialog()
 	}
-	
+
 	return content.String()
 }
 
@@ -57,92 +57,21 @@ func (a *AppState) renderCurrentScreen() string {
 // Screen renderers
 
 func (a *AppState) renderTemplateScreen() string {
-	var content strings.Builder
-	
-	content.WriteString(a.styleScreenTitle("Choose Template"))
-	content.WriteString("\n\n")
-	
-	if len(a.Template.items) == 0 {
-		content.WriteString("Loading templates...\n")
-		return content.String()
-	}
-	
-	// Render template list
-	for i, template := range a.Template.items {
-		var line strings.Builder
-		
-		// Selection indicator
-		if i == a.Template.cursor {
-			line.WriteString("→ ")
-		} else {
-			line.WriteString("  ")
-		}
-		
-		// Template name
-		name := template.Name
-		if a.Template.selected == template {
-			name = a.styleSelectedItem(name)
-		} else if i == a.Template.cursor {
-			name = a.styleCursorItem(name)
-		}
-		line.WriteString(name)
-		
-		// Template description
-		if template.Description != "" {
-			line.WriteString(" - ")
-			line.WriteString(a.styleDescription(template.Description))
-		}
-		
-		content.WriteString(line.String())
-		content.WriteString("\n")
-	}
-	
-	content.WriteString("\n")
-	content.WriteString(a.renderNavigationHelp())
-	
-	return content.String()
+	return a.Template.View()
 }
 
 func (a *AppState) renderTaskScreen() string {
-	var content strings.Builder
-	
-	content.WriteString(a.styleScreenTitle("Describe Your Task"))
-	content.WriteString("\n\n")
-	
-	content.WriteString("Enter a detailed description of what you want to accomplish:\n\n")
-	
-	// Render text input with cursor
-	inputText := a.TaskInput.content
-	if len(inputText) == 0 {
-		inputText = a.stylePlaceholder("Type your task description here...")
-	} else {
-		// Insert cursor
-		if a.TaskInput.cursor <= len(inputText) {
-			inputText = inputText[:a.TaskInput.cursor] + a.styleCursor("│") + inputText[a.TaskInput.cursor:]
-		}
-	}
-	
-	content.WriteString(a.styleInputBox(inputText))
-	content.WriteString("\n\n")
-	
-	content.WriteString("Examples:\n")
-	content.WriteString("• Create a REST API for user management\n")
-	content.WriteString("• Refactor this component to use hooks\n")
-	content.WriteString("• Add error handling to the payment flow\n\n")
-	
-	content.WriteString(a.renderNavigationHelp())
-	
-	return content.String()
+	return a.TaskInput.View()
 }
 
 func (a *AppState) renderRulesScreen() string {
 	var content strings.Builder
-	
+
 	content.WriteString(a.styleScreenTitle("Add Custom Rules (Optional)"))
 	content.WriteString("\n\n")
-	
+
 	content.WriteString("Add any specific rules or constraints:\n\n")
-	
+
 	// Render text input with cursor
 	inputText := a.RulesInput.content
 	if len(inputText) == 0 {
@@ -153,40 +82,40 @@ func (a *AppState) renderRulesScreen() string {
 			inputText = inputText[:a.RulesInput.cursor] + a.styleCursor("│") + inputText[a.RulesInput.cursor:]
 		}
 	}
-	
+
 	content.WriteString(a.styleInputBox(inputText))
 	content.WriteString("\n\n")
-	
+
 	content.WriteString("Examples:\n")
 	content.WriteString("• Use TypeScript strict mode\n")
 	content.WriteString("• Follow company coding standards\n")
 	content.WriteString("• Include comprehensive error handling\n\n")
-	
+
 	content.WriteString(a.renderNavigationHelp())
-	
+
 	return content.String()
 }
 
 func (a *AppState) renderConfirmationScreen() string {
 	var content strings.Builder
-	
+
 	content.WriteString(a.styleScreenTitle("Review & Confirm"))
 	content.WriteString("\n\n")
-	
+
 	// Build summary
 	summary := a.Confirmation.summary
 	if summary == "" {
 		a.buildConfirmationSummary()
 		summary = a.Confirmation.summary
 	}
-	
+
 	content.WriteString(a.styleConfirmationBox(summary))
 	content.WriteString("\n\n")
-	
+
 	content.WriteString(a.styleAction("Press F3 to generate your prompt"))
 	content.WriteString("\n")
 	content.WriteString(a.renderNavigationHelp())
-	
+
 	return content.String()
 }
 
@@ -196,7 +125,7 @@ func (a *AppState) renderHelpDialog() string {
 	if a.HelpContent == "" {
 		a.HelpContent = a.getHelpContent()
 	}
-	
+
 	// Create help dialog box
 	helpBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -204,7 +133,7 @@ func (a *AppState) renderHelpDialog() string {
 		Padding(1, 2).
 		Width(60).
 		Render(a.HelpContent)
-	
+
 	// Center the dialog
 	return lipgloss.Place(
 		a.WindowSize.Width,
@@ -217,14 +146,14 @@ func (a *AppState) renderHelpDialog() string {
 
 func (a *AppState) renderExitDialog() string {
 	exitText := "Are you sure you want to exit?\n\nPress 'y' to quit or 'n' to continue"
-	
+
 	exitBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("9")). // Red
 		Padding(1, 2).
 		Width(40).
 		Render(exitText)
-	
+
 	// Center the dialog
 	return lipgloss.Place(
 		a.WindowSize.Width,

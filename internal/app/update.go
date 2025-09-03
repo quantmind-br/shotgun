@@ -3,6 +3,8 @@ package app
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/user/shotgun-cli/internal/screens/filetree"
+	"github.com/user/shotgun-cli/internal/screens/input"
+	"github.com/user/shotgun-cli/internal/screens/template"
 )
 
 // Init implements tea.Model interface
@@ -16,7 +18,6 @@ func (a *AppState) Init() tea.Cmd {
 
 // Update implements tea.Model interface
 func (a *AppState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -45,8 +46,6 @@ func (a *AppState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Pass message to current screen
 		return a.handleScreenMessage(msg)
 	}
-
-	return a, tea.Batch(cmds...)
 }
 
 // handleScreenInput routes keyboard input to current screen
@@ -76,75 +75,74 @@ func (a *AppState) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 // handleScreenMessage routes other messages to current screen
 func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch a.CurrentScreen {
 	case FileTreeScreen:
 		updatedModel, cmd := a.FileTree.Update(msg)
 		a.FileTree = updatedModel.(filetree.FileTreeModel)
-		return a, cmd
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 
-	default:
-		return a, nil
+	case TemplateScreen:
+		updatedModel, cmd := a.Template.Update(msg)
+		a.Template = updatedModel
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		// Handle template screen specific messages
+		switch msg := msg.(type) {
+		case template.TemplateSelectedMsg:
+			a.SelectedTemplate = msg.Template
+			a.SetCurrentScreen(TaskScreen)
+		case template.BackToFileTreeMsg:
+			a.SetCurrentScreen(FileTreeScreen)
+		case template.RefreshTemplatesMsg:
+			// Handle template refresh - would need template service
+			// cmds = append(cmds, template.RefreshTemplatesCmd(a.templateService, a.ctx))
+		}
+
+	case TaskScreen:
+		updatedModel, cmd := a.TaskInput.Update(msg)
+		a.TaskInput = updatedModel
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		// Update AppState.TaskContent with current textarea content
+		a.TaskContent = a.TaskInput.GetContent()
+
+		// Handle task screen specific messages
+		switch msg := msg.(type) {
+		case input.TaskInputMsg:
+			// Advance to rules screen when task input is complete
+			a.SetCurrentScreen(RulesScreen)
+		case input.BackToTemplateMsg:
+			a.SetCurrentScreen(TemplateScreen)
+		}
 	}
+
+	return a, tea.Batch(cmds...)
 }
 
 // Screen-specific input handlers
 
 func (a *AppState) handleTemplateInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "up", "k":
-		if a.Template.cursor > 0 {
-			a.Template.cursor--
-		}
-	case "down", "j":
-		if a.Template.cursor < len(a.Template.items)-1 {
-			a.Template.cursor++
-		}
-	case "enter", " ":
-		if len(a.Template.items) > 0 && a.Template.cursor < len(a.Template.items) {
-			a.Template.selected = a.Template.items[a.Template.cursor]
-			a.SelectedTemplate = a.Template.selected
-		}
-	}
-	return a, nil
+	updatedModel, cmd := a.Template.Update(msg)
+	a.Template = updatedModel
+	return a, cmd
 }
 
 func (a *AppState) handleTaskInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+a":
-		a.TaskInput.cursor = 0
-	case "ctrl+e":
-		a.TaskInput.cursor = len(a.TaskInput.content)
-	case "left":
-		if a.TaskInput.cursor > 0 {
-			a.TaskInput.cursor--
-		}
-	case "right":
-		if a.TaskInput.cursor < len(a.TaskInput.content) {
-			a.TaskInput.cursor++
-		}
-	case "backspace":
-		if a.TaskInput.cursor > 0 && len(a.TaskInput.content) > 0 {
-			a.TaskInput.content = a.TaskInput.content[:a.TaskInput.cursor-1] + a.TaskInput.content[a.TaskInput.cursor:]
-			a.TaskInput.cursor--
-			a.TaskContent = a.TaskInput.content
-		}
-	case "delete":
-		if a.TaskInput.cursor < len(a.TaskInput.content) {
-			a.TaskInput.content = a.TaskInput.content[:a.TaskInput.cursor] + a.TaskInput.content[a.TaskInput.cursor+1:]
-			a.TaskContent = a.TaskInput.content
-		}
-	default:
-		// Handle regular character input
-		if len(msg.Runes) > 0 {
-			char := string(msg.Runes[0])
-			if len(char) == 1 && char >= " " { // Printable character
-				a.TaskInput.content = a.TaskInput.content[:a.TaskInput.cursor] + char + a.TaskInput.content[a.TaskInput.cursor:]
-				a.TaskInput.cursor++
-				a.TaskContent = a.TaskInput.content
-			}
-		}
-	}
-	return a, nil
+	updatedModel, cmd := a.TaskInput.Update(msg)
+	a.TaskInput = updatedModel
+	
+	// Update AppState.TaskContent with current textarea content
+	a.TaskContent = a.TaskInput.GetContent()
+	
+	return a, cmd
 }
 
 func (a *AppState) handleRulesInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -218,4 +216,3 @@ func (a *AppState) handleExitDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	return a, nil
 }
-

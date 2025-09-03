@@ -3,11 +3,14 @@ package app
 import (
 	"context"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/viewport"
+	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/user/shotgun-cli/internal/components/progress"
+	"github.com/user/shotgun-cli/internal/models"
 	"github.com/user/shotgun-cli/internal/screens/filetree"
+	"github.com/user/shotgun-cli/internal/screens/input"
+	"github.com/user/shotgun-cli/internal/screens/template"
 )
 
 // ScreenType represents the different screens in the wizard
@@ -40,6 +43,7 @@ func (s ScreenType) String() string {
 }
 
 // Template represents a template selection
+// Legacy template struct - remove once migration complete
 type Template struct {
 	Name        string `json:"name"`
 	Path        string `json:"path"`
@@ -56,14 +60,7 @@ type InputModel struct {
 }
 
 // TemplateModel represents template selection screen model
-type TemplateModel struct {
-	items    []*Template
-	cursor   int
-	selected *Template
-	viewport viewport.Model
-	width    int
-	height   int
-}
+// Legacy TemplateModel - remove once migration complete
 
 // ConfirmModel represents confirmation screen model
 type ConfirmModel struct {
@@ -80,8 +77,8 @@ type AppState struct {
 
 	// Screen models
 	FileTree     filetree.FileTreeModel
-	Template     TemplateModel
-	TaskInput    InputModel
+	Template     template.TemplateModel
+	TaskInput    input.TaskInputModel
 	RulesInput   InputModel
 	Confirmation ConfirmModel
 
@@ -90,7 +87,7 @@ type AppState struct {
 
 	// Shared data across screens
 	SelectedFiles    []string
-	SelectedTemplate *Template
+	SelectedTemplate *models.Template
 	TaskContent      string
 	RulesContent     string
 
@@ -111,40 +108,33 @@ type AppState struct {
 // NewApp creates a new application state with default values
 func NewApp() *AppState {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Define screen titles
 	screenTitles := []string{
 		"Select Files",
-		"Choose Template", 
+		"Choose Template",
 		"Describe Task",
 		"Add Rules (Optional)",
 		"Review & Confirm",
 	}
-	
+
 	app := &AppState{
 		CurrentScreen:    FileTreeScreen,
 		SelectedFiles:    make([]string, 0),
 		SelectedTemplate: nil,
 		TaskContent:      "",
 		RulesContent:     "",
-		ShowingHelp:     false,
-		HelpContent:     "",
-		ShowingExit:     false,
+		ShowingHelp:      false,
+		HelpContent:      "",
+		ShowingExit:      false,
 		ctx:              ctx,
 		cancel:           cancel,
 	}
 
 	// Initialize screen models with defaults
 	app.FileTree = filetree.NewFileTreeModel()
-	app.Template = TemplateModel{
-		items:    make([]*Template, 0),
-		cursor:   0,
-		selected: nil,
-	}
-	app.TaskInput = InputModel{
-		content: "",
-		cursor:  0,
-	}
+	app.Template = template.NewTemplateModel()
+	app.TaskInput = input.NewTaskInputModel()
 	app.RulesInput = InputModel{
 		content: "",
 		cursor:  0,
@@ -152,7 +142,7 @@ func NewApp() *AppState {
 	app.Confirmation = ConfirmModel{
 		summary: "",
 	}
-	
+
 	// Initialize progress indicator
 	app.Progress = progress.NewModel(1, 5, screenTitles)
 
@@ -174,25 +164,19 @@ func (a *AppState) Context() context.Context {
 // UpdateWindowSize updates the window size for all screen models
 func (a *AppState) UpdateWindowSize(msg tea.WindowSizeMsg) {
 	a.WindowSize = msg
-	
+
 	// Update viewport sizes for all models
 	a.FileTree.SetSize(msg.Width, msg.Height)
-	
-	a.Template.width = msg.Width
-	a.Template.height = msg.Height
-	a.Template.viewport.Width = msg.Width
-	a.Template.viewport.Height = msg.Height - 6 // Reserve space for header/footer
-	
-	a.TaskInput.width = msg.Width
-	a.TaskInput.height = msg.Height
-	a.TaskInput.viewport.Width = msg.Width
-	a.TaskInput.viewport.Height = msg.Height - 6
-	
+
+	a.Template.UpdateSize(msg.Width, msg.Height)
+
+	a.TaskInput.UpdateSize(msg.Width, msg.Height)
+
 	a.RulesInput.width = msg.Width
 	a.RulesInput.height = msg.Height
 	a.RulesInput.viewport.Width = msg.Width
 	a.RulesInput.viewport.Height = msg.Height - 6
-	
+
 	a.Confirmation.width = msg.Width
 	a.Confirmation.height = msg.Height
 	a.Confirmation.viewport.Width = msg.Width
@@ -200,7 +184,8 @@ func (a *AppState) UpdateWindowSize(msg tea.WindowSizeMsg) {
 }
 
 // GetCurrentScreenModel returns the current active screen model
-func (a *AppState) GetCurrentScreenModel() tea.Model {
+// Note: This is primarily for testing purposes
+func (a *AppState) GetCurrentScreenModel() interface{} {
 	switch a.CurrentScreen {
 	case FileTreeScreen:
 		return &a.FileTree
@@ -221,12 +206,12 @@ func (a *AppState) GetCurrentScreenModel() tea.Model {
 func (a *AppState) SetCurrentScreen(screen ScreenType) {
 	// Save current screen state before switching
 	a.saveCurrentScreenState()
-	
+
 	a.CurrentScreen = screen
-	
+
 	// Update progress indicator
 	a.Progress.SetCurrent(int(screen) + 1)
-	
+
 	// Load state into new screen
 	a.loadScreenState(screen)
 }
@@ -237,7 +222,7 @@ func (a *AppState) saveCurrentScreenState() {
 	case FileTreeScreen:
 		a.SelectedFiles = a.FileTree.GetSelectedFiles()
 	case TemplateScreen:
-		a.SelectedTemplate = a.Template.selected
+		a.SelectedTemplate = a.Template.GetSelected()
 	case TaskScreen:
 		a.TaskContent = a.TaskInput.content
 	case RulesScreen:
@@ -251,9 +236,9 @@ func (a *AppState) loadScreenState(screen ScreenType) {
 	case FileTreeScreen:
 		// FileTree state is managed internally
 	case TemplateScreen:
-		a.Template.selected = a.SelectedTemplate
+		// Template selection is managed internally by the template screen
 	case TaskScreen:
-		a.TaskInput.content = a.TaskContent
+		a.TaskInput.SetContent(a.TaskContent)
 	case RulesScreen:
 		a.RulesInput.content = a.RulesContent
 	case ConfirmScreen:
@@ -265,7 +250,7 @@ func (a *AppState) loadScreenState(screen ScreenType) {
 // buildConfirmationSummary creates a summary for the confirmation screen
 func (a *AppState) buildConfirmationSummary() {
 	summary := "Configuration Summary:\n\n"
-	
+
 	if len(a.SelectedFiles) > 0 {
 		summary += "Selected Files:\n"
 		for _, file := range a.SelectedFiles {
@@ -273,18 +258,18 @@ func (a *AppState) buildConfirmationSummary() {
 		}
 		summary += "\n"
 	}
-	
+
 	if a.SelectedTemplate != nil {
 		summary += "Selected Template: " + a.SelectedTemplate.Name + "\n\n"
 	}
-	
+
 	if a.TaskContent != "" {
 		summary += "Task Description:\n" + a.TaskContent + "\n\n"
 	}
-	
+
 	if a.RulesContent != "" {
 		summary += "Custom Rules:\n" + a.RulesContent + "\n\n"
 	}
-	
+
 	a.Confirmation.summary = summary
 }
