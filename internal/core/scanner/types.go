@@ -16,7 +16,7 @@ const (
 type ScannerInterface interface {
 	// ScanDirectory scans a directory and returns a stream of discovered files
 	ScanDirectory(ctx context.Context, rootPath string) (<-chan ScanResult, error)
-	
+
 	// ScanDirectorySync scans a directory synchronously and returns all files at once
 	ScanDirectorySync(ctx context.Context, rootPath string) ([]*models.FileNode, error)
 }
@@ -31,19 +31,19 @@ type ScanResult struct {
 type ScanOptions struct {
 	// MaxDepth limits directory traversal depth (0 = unlimited)
 	MaxDepth int
-	
+
 	// FollowSymlinks determines whether to follow symbolic links
 	FollowSymlinks bool
-	
+
 	// DetectBinary enables binary file detection
 	DetectBinary bool
-	
+
 	// BufferSize sets the channel buffer size for streaming results
 	BufferSize int
-	
+
 	// WorkerCount overrides the default worker pool size
 	WorkerCount int
-	
+
 	// Timeout sets the maximum time for scanning operations
 	Timeout time.Duration
 }

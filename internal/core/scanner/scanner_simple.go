@@ -76,7 +76,7 @@ func (scfs *SimpleConcurrentFileScanner) ScanDirectory(ctx context.Context, root
 	// Start scanning in a separate goroutine
 	go func() {
 		defer close(resultChan)
-		
+
 		// Set up timeout context if specified
 		scanCtx := ctx
 		if scfs.options.Timeout > 0 {
@@ -84,7 +84,7 @@ func (scfs *SimpleConcurrentFileScanner) ScanDirectory(ctx context.Context, root
 			scanCtx, cancel = context.WithTimeout(ctx, scfs.options.Timeout)
 			defer cancel()
 		}
-		
+
 		scfs.scanConcurrent(scanCtx, cleanPath, workerCount, resultChan)
 	}()
 
@@ -121,7 +121,7 @@ func (scfs *SimpleConcurrentFileScanner) ScanDirectorySync(ctx context.Context, 
 func (scfs *SimpleConcurrentFileScanner) scanConcurrent(ctx context.Context, rootPath string, workerCount int, resultChan chan<- ScanResult) {
 	// Channel for paths to be processed
 	pathChan := make(chan string, scfs.options.BufferSize)
-	
+
 	// Start worker goroutines
 	var wg sync.WaitGroup
 	for i := 0; i < workerCount; i++ {
@@ -172,7 +172,7 @@ func (scfs *SimpleConcurrentFileScanner) discoverPaths(ctx context.Context, path
 		}
 
 		childPath := filepath.Join(path, entry.Name())
-		
+
 		// Check if path should be ignored
 		if scfs.ignorer != nil && scfs.ignorer.IsIgnored(childPath) {
 			if entry.IsDir() {
@@ -183,7 +183,7 @@ func (scfs *SimpleConcurrentFileScanner) discoverPaths(ctx context.Context, path
 				continue
 			}
 		}
-		
+
 		// Submit all paths (files and directories) for processing
 		scfs.discoverPaths(ctx, childPath, depth+1, pathChan)
 	}
@@ -204,7 +204,7 @@ func (scfs *SimpleConcurrentFileScanner) worker(ctx context.Context, pathChan <-
 
 			// Process the path
 			result := scfs.processPath(ctx, path)
-			
+
 			// Send result only if it's not empty (FileNode != nil or Error != nil)
 			if result.FileNode != nil || result.Error != nil {
 				select {
@@ -254,4 +254,3 @@ func (scfs *SimpleConcurrentFileScanner) processPath(ctx context.Context, path s
 
 	return ScanResult{FileNode: node}
 }
-

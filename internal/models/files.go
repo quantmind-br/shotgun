@@ -12,6 +12,7 @@ type FileNode struct {
 	IsSelected  bool        `json:"is_selected"`
 	IsIgnored   bool        `json:"is_ignored"`
 	IsBinary    bool        `json:"is_binary"`
+	IsExpanded  bool        `json:"is_expanded"`
 	Size        int64       `json:"size"`
 	ModTime     time.Time   `json:"mod_time"`
 	Children    []*FileNode `json:"children,omitempty"`

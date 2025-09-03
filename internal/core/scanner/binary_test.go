@@ -20,7 +20,7 @@ func TestNewBinaryDetector(t *testing.T) {
 func TestNewBinaryDetectorWithMaxSize(t *testing.T) {
 	customSize := int64(512 * 1024) // 512KB
 	detector := NewBinaryDetectorWithMaxSize(customSize)
-	
+
 	if detector.maxFileSize != customSize {
 		t.Errorf("expected maxFileSize = %d, got %d", customSize, detector.maxFileSize)
 	}
@@ -100,7 +100,7 @@ func TestBinaryDetector_IsBinary(t *testing.T) {
 
 func TestBinaryDetector_IsBinary_NonExistentFile(t *testing.T) {
 	detector := NewBinaryDetector()
-	
+
 	// Should return false for non-existent files
 	result := detector.IsBinary("/non/existent/file.txt")
 	if result != false {
@@ -117,7 +117,7 @@ func TestBinaryDetector_IsBinary_LargeFile(t *testing.T) {
 
 	// Create a detector with very small max size
 	detector := NewBinaryDetectorWithMaxSize(10)
-	
+
 	// Create a file larger than max size
 	largeFile := filepath.Join(tempDir, "large.txt")
 	largeContent := make([]byte, 100) // 100 bytes > 10 bytes max
@@ -188,7 +188,7 @@ func TestBinaryDetector_ContainsNullBytes(t *testing.T) {
 func TestBinaryDetector_GetMaxFileSize(t *testing.T) {
 	customSize := int64(256 * 1024)
 	detector := NewBinaryDetectorWithMaxSize(customSize)
-	
+
 	if detector.GetMaxFileSize() != customSize {
 		t.Errorf("expected GetMaxFileSize() = %d, got %d", customSize, detector.GetMaxFileSize())
 	}

@@ -22,11 +22,11 @@ func (mjp *MockJobProcessor) ProcessJob(ctx context.Context, job Job) []ScanResu
 	mjp.mu.Lock()
 	mjp.callCount++
 	mjp.mu.Unlock()
-	
+
 	if mjp.processFunc != nil {
 		return mjp.processFunc(ctx, job)
 	}
-	
+
 	// Default implementation - just echo the job as a successful result
 	return []ScanResult{
 		{
@@ -46,11 +46,11 @@ func (mjp *MockJobProcessor) CallCount() int {
 
 func TestNewWorkerPool(t *testing.T) {
 	processor := &MockJobProcessor{}
-	
+
 	tests := []struct {
-		name         string
-		workerCount  int
-		bufferSize   int
+		name            string
+		workerCount     int
+		bufferSize      int
 		expectedWorkers int
 		expectedBuffer  int
 	}{
@@ -83,23 +83,23 @@ func TestNewWorkerPool(t *testing.T) {
 			expectedBuffer:  DEFAULT_JOB_BUFFER_SIZE,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wp := NewWorkerPool(tt.workerCount, tt.bufferSize, processor)
-			
+
 			if wp == nil {
 				t.Fatal("NewWorkerPool returned nil")
 			}
-			
+
 			if wp.WorkerCount() != tt.expectedWorkers {
 				t.Errorf("Expected %d workers, got %d", tt.expectedWorkers, wp.WorkerCount())
 			}
-			
+
 			if cap(wp.jobChan) < tt.expectedBuffer-1 { // Allow some flexibility
 				t.Errorf("Expected job channel buffer >= %d, got %d", tt.expectedBuffer-1, cap(wp.jobChan))
 			}
-			
+
 			if cap(wp.resultChan) < tt.expectedBuffer-1 {
 				t.Errorf("Expected result channel buffer >= %d, got %d", tt.expectedBuffer-1, cap(wp.resultChan))
 			}
@@ -110,19 +110,19 @@ func TestNewWorkerPool(t *testing.T) {
 func TestWorkerPool_StartStop(t *testing.T) {
 	processor := &MockJobProcessor{}
 	wp := NewWorkerPool(2, 10, processor)
-	
+
 	// Start the pool
 	wp.Start()
-	
+
 	// Submit a job
 	wp.SubmitJob(Job{Path: "test", Depth: 0})
-	
+
 	// Wait a bit for processing
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Stop the pool
 	wp.Stop()
-	
+
 	// Verify the processor was called
 	if processor.CallCount() == 0 {
 		t.Error("Expected processor to be called at least once")
@@ -144,26 +144,26 @@ func TestWorkerPool_JobProcessing(t *testing.T) {
 			}
 		},
 	}
-	
+
 	wp := NewWorkerPool(1, 5, processor) // Single worker for predictable behavior
 	wp.Start()
 	defer wp.Stop()
-	
+
 	// Submit multiple jobs
 	testJobs := []Job{
 		{Path: "job1", Depth: 0},
 		{Path: "job2", Depth: 1},
 		{Path: "job3", Depth: 0},
 	}
-	
+
 	for _, job := range testJobs {
 		wp.SubmitJob(job)
 	}
-	
+
 	// Collect results
 	var results []ScanResult
 	timeout := time.After(5 * time.Second)
-	
+
 	for len(results) < len(testJobs) {
 		select {
 		case result := <-wp.Results():
@@ -172,12 +172,12 @@ func TestWorkerPool_JobProcessing(t *testing.T) {
 			t.Fatal("Timeout waiting for results")
 		}
 	}
-	
+
 	// Verify results
 	if len(results) != len(testJobs) {
 		t.Errorf("Expected %d results, got %d", len(testJobs), len(results))
 	}
-	
+
 	// Verify all jobs were processed
 	processedPaths := make(map[string]bool)
 	for _, result := range results {
@@ -185,7 +185,7 @@ func TestWorkerPool_JobProcessing(t *testing.T) {
 			processedPaths[result.FileNode.Path] = true
 		}
 	}
-	
+
 	expectedPaths := []string{"job1_processed", "job2_processed", "job3_processed"}
 	for _, expectedPath := range expectedPaths {
 		if !processedPaths[expectedPath] {
@@ -206,26 +206,26 @@ func TestWorkerPool_ContextCancellation(t *testing.T) {
 			}
 		},
 	}
-	
+
 	wp := NewWorkerPool(2, 5, processor)
 	wp.Start()
 	defer wp.Stop()
-	
+
 	// Submit some jobs
 	for i := 0; i < 5; i++ {
 		wp.SubmitJob(Job{Path: "job", Depth: 0})
 	}
-	
+
 	// Cancel the context after a short delay
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		wp.cancel() // Cancel the worker pool context
 	}()
-	
+
 	// Collect results - should complete quickly due to cancellation
 	var results []ScanResult
 	timeout := time.After(2 * time.Second)
-	
+
 	resultsReceived := 0
 	for resultsReceived < 5 {
 		select {
@@ -236,7 +236,7 @@ func TestWorkerPool_ContextCancellation(t *testing.T) {
 			}
 			results = append(results, result)
 			resultsReceived++
-			
+
 		case <-timeout:
 			// This is acceptable - workers may not process all jobs if cancelled
 			t.Logf("Received %d results before timeout (cancellation may have interrupted processing)", resultsReceived)
@@ -255,26 +255,26 @@ func TestWorkerPool_ErrorHandling(t *testing.T) {
 			return []ScanResult{{FileNode: &models.FileNode{Path: job.Path}}}
 		},
 	}
-	
+
 	wp := NewWorkerPool(1, 5, processor)
 	wp.Start()
 	defer wp.Stop()
-	
+
 	// Submit jobs including one that will cause an error
 	testJobs := []Job{
 		{Path: "good_job", Depth: 0},
 		{Path: "error_job", Depth: 0},
 		{Path: "another_good_job", Depth: 0},
 	}
-	
+
 	for _, job := range testJobs {
 		wp.SubmitJob(job)
 	}
-	
+
 	// Collect results
 	var results []ScanResult
 	var errors []error
-	
+
 	timeout := time.After(5 * time.Second)
 	for len(results) < len(testJobs) {
 		select {
@@ -287,12 +287,12 @@ func TestWorkerPool_ErrorHandling(t *testing.T) {
 			t.Fatal("Timeout waiting for results")
 		}
 	}
-	
+
 	// Verify we got the expected error
 	if len(errors) != 1 {
 		t.Errorf("Expected 1 error, got %d", len(errors))
 	}
-	
+
 	if len(errors) > 0 {
 		scanErr, ok := errors[0].(*ScanError)
 		if !ok {
@@ -313,15 +313,15 @@ func TestWorkerPool_ConcurrentSafety_DISABLED(t *testing.T) {
 			return []ScanResult{{FileNode: &models.FileNode{Path: job.Path}}}
 		},
 	}
-	
+
 	wp := NewWorkerPool(4, 20, processor) // Multiple workers
 	wp.Start()
 	defer wp.Stop()
-	
+
 	// Submit jobs from multiple goroutines
 	const numJobs = 50
 	const numGoroutines = 5
-	
+
 	var wg sync.WaitGroup
 	for g := 0; g < numGoroutines; g++ {
 		wg.Add(1)
@@ -333,20 +333,20 @@ func TestWorkerPool_ConcurrentSafety_DISABLED(t *testing.T) {
 			}
 		}(g)
 	}
-	
+
 	// Wait for all jobs to be submitted
 	wg.Wait()
-	
+
 	// Stop the worker pool to signal completion
 	go func() {
 		time.Sleep(500 * time.Millisecond) // Allow jobs to process
 		wp.Stop()
 	}()
-	
+
 	// Collect results with timeout
 	var results []ScanResult
 	timeout := time.After(5 * time.Second)
-	
+
 	for {
 		select {
 		case result, ok := <-wp.Results():
@@ -362,9 +362,9 @@ func TestWorkerPool_ConcurrentSafety_DISABLED(t *testing.T) {
 			t.Fatalf("Timeout waiting for results. Got %d out of %d", len(results), numJobs)
 		}
 	}
-	
-	done:
-	
+
+done:
+
 	// Verify all results are unique (no race conditions caused duplicates)
 	pathsSeen := make(map[string]bool)
 	for _, result := range results {
@@ -387,4 +387,3 @@ type ScanError struct {
 func (se *ScanError) Error() string {
 	return se.Message
 }
-

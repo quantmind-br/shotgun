@@ -191,7 +191,7 @@ build/
 	}
 
 	patterns := ignorer.GetPatterns()
-	
+
 	// Should only have 3 patterns (*.tmp, *.log, build/)
 	expectedPatterns := 3
 	if len(patterns) != expectedPatterns {

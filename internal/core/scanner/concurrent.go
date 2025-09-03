@@ -9,10 +9,10 @@ import (
 const (
 	// DEFAULT_WORKER_COUNT uses all available CPU cores
 	DEFAULT_WORKER_COUNT = 0
-	
+
 	// MAX_WORKER_COUNT limits maximum workers to prevent resource exhaustion
 	MAX_WORKER_COUNT = 50
-	
+
 	// DEFAULT_JOB_BUFFER_SIZE provides reasonable buffering for job distribution
 	DEFAULT_JOB_BUFFER_SIZE = 100
 )
@@ -104,10 +104,10 @@ func (wp *WorkerPool) worker(workerID int) {
 				// Job channel closed, worker should exit
 				return
 			}
-			
+
 			// Process the job
 			results := wp.processor.ProcessJob(wp.ctx, job)
-			
+
 			// Send results
 			for _, result := range results {
 				select {
@@ -116,7 +116,7 @@ func (wp *WorkerPool) worker(workerID int) {
 					return
 				}
 			}
-			
+
 		case <-wp.ctx.Done():
 			// Context cancelled, worker should exit
 			return

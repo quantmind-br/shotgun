@@ -110,7 +110,7 @@ func TestScanner_ScanDirectory_InvalidPath(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	
+
 	// Test non-existent directory
 	_, err = scanner.ScanDirectory(ctx, "/non/existent/path")
 	if err == nil {

@@ -39,7 +39,7 @@ func NewIgnorer(baseDir string) (*Ignorer, error) {
 // loadIgnoreFile loads patterns from an ignore file
 func (ig *Ignorer) loadIgnoreFile(filename string) error {
 	ignoreFilePath := filepath.Join(ig.baseDir, filename)
-	
+
 	file, err := os.Open(ignoreFilePath)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (ig *Ignorer) loadIgnoreFile(filename string) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -74,7 +74,7 @@ func (ig *Ignorer) IsIgnored(path string) bool {
 	relPath = filepath.ToSlash(relPath)
 
 	ignored := false
-	
+
 	// First pass: check normal patterns
 	for _, pattern := range ig.patterns {
 		// Skip negation patterns in first pass
