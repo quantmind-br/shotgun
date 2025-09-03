@@ -2,14 +2,14 @@ package models
 
 // Template represents a prompt template with metadata and variables
 type Template struct {
-	ID          string               `toml:"id" json:"id"`
-	Name        string               `toml:"name" json:"name"`
-	Version     string               `toml:"version" json:"version"`
-	Description string               `toml:"description" json:"description"`
-	Author      string               `toml:"author" json:"author"`
-	Tags        []string             `toml:"tags" json:"tags"`
-	Variables   map[string]Variable  `toml:"variables" json:"variables"`
-	Content     string               `toml:"content" json:"content"`
+	ID          string              `toml:"id" json:"id"`
+	Name        string              `toml:"name" json:"name"`
+	Version     string              `toml:"version" json:"version"`
+	Description string              `toml:"description" json:"description"`
+	Author      string              `toml:"author" json:"author"`
+	Tags        []string            `toml:"tags" json:"tags"`
+	Variables   map[string]Variable `toml:"variables" json:"variables"`
+	Content     string              `toml:"content" json:"content"`
 }
 
 // Variable represents a template variable with validation constraints
@@ -54,7 +54,7 @@ type TemplateInfo struct {
 // ValidVariableTypes contains all supported variable types
 var ValidVariableTypes = []string{
 	"text",
-	"multiline", 
+	"multiline",
 	"auto",
 	"choice",
 	"boolean",

@@ -195,7 +195,7 @@ func TestGenerateTemplateID(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			result := generateTemplateID(test.input)
 			if result != test.expected {
-				t.Errorf("For input '%s', expected '%s', got '%s'", 
+				t.Errorf("For input '%s', expected '%s', got '%s'",
 					test.input, test.expected, result)
 			}
 		})

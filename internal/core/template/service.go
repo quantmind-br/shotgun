@@ -156,7 +156,7 @@ func (s *templateService) GetTemplateCount() int {
 // GetAllCachedTemplates returns all cached templates (for testing/debugging)
 func (s *templateService) GetAllCachedTemplates() []models.Template {
 	var templates []models.Template
-	
+
 	s.cache.Range(func(key, value interface{}) bool {
 		if template, ok := value.(models.Template); ok {
 			templates = append(templates, template)

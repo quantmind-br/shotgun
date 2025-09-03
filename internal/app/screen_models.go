@@ -18,22 +18,7 @@ func (m InputModel) View() string {
 	return m.content
 }
 
-// Implement tea.Model interface for TemplateModel
-
-func (m TemplateModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m TemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
-func (m TemplateModel) View() string {
-	if len(m.items) == 0 {
-		return "No templates available"
-	}
-	return "Templates loaded"
-}
+// TemplateModel implementation moved to internal/screens/template/
 
 // Implement tea.Model interface for ConfirmModel
 

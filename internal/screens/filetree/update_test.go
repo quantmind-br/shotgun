@@ -318,7 +318,7 @@ func TestUpdateParentSelection(t *testing.T) {
 	if parent.IsSelected {
 		t.Error("Expected parent directory to be deselected when child is deselected")
 	}
-	
+
 	// Test with nil parent (edge case)
 	model.updateParentSelection(nil)
 	// Should not crash
@@ -355,7 +355,7 @@ func TestUpdateParentSelection_MixedChildren(t *testing.T) {
 
 	// Don't use LoadFileTree as it auto-selects all files, instead manually set up
 	model.items = []*models.FileNode{parent}
-	
+
 	// Manually set the desired selection states
 	child1.IsSelected = true
 	child2.IsSelected = false
@@ -372,11 +372,11 @@ func TestUpdateParentSelection_MixedChildren(t *testing.T) {
 
 func TestUpdateViewport(t *testing.T) {
 	model := NewFileTreeModel()
-	
+
 	// Set up a model with some items and viewport dimensions
 	model.height = 10
 	model.viewport.Height = 8 // 2 lines reserved for status/help
-	
+
 	// Create enough items to require scrolling
 	var nodes []*models.FileNode
 	for i := 0; i < 20; i++ {
@@ -387,15 +387,15 @@ func TestUpdateViewport(t *testing.T) {
 			IsSelected:  true,
 		})
 	}
-	
+
 	model.LoadFileTree(nodes)
-	
+
 	// Set cursor to bottom of viewport
 	model.cursor = 15
-	
+
 	// Update viewport should adjust scroll position
 	model.updateViewport()
-	
+
 	// Viewport should have content set
 	content := model.viewport.View()
 	if content == "" {
@@ -459,7 +459,7 @@ func TestToggleSelection_EdgeCases(t *testing.T) {
 	// Test with no items
 	model.items = []*models.FileNode{}
 	model.cursor = 0
-	
+
 	// Should not crash
 	model.toggleSelection()
 
@@ -468,10 +468,10 @@ func TestToggleSelection_EdgeCases(t *testing.T) {
 		{Name: "file.txt", IsDirectory: false, IsSelected: true},
 	}
 	model.cursor = 5 // Out of bounds
-	
+
 	// Should not crash
 	model.toggleSelection()
-	
+
 	// File should remain selected (no change)
 	if !model.items[0].IsSelected {
 		t.Error("Expected file to remain selected when cursor out of bounds")

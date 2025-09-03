@@ -214,7 +214,7 @@ func (d *DiscoveryService) deduplicateTemplates(templates []models.TemplateInfo)
 
 	for _, template := range templates {
 		existing, exists := templateMap[template.Template.ID]
-		
+
 		if !exists {
 			// New template, add it
 			templateMap[template.Template.ID] = template
@@ -261,7 +261,7 @@ func (d *DiscoveryService) isPathSafe(baseDir, targetPath string) bool {
 
 	// Check if target path starts with base directory
 	return strings.HasPrefix(cleanTarget, cleanBase+string(filepath.Separator)) ||
-		   cleanTarget == cleanBase
+		cleanTarget == cleanBase
 }
 
 // parseTemplateFromData is implemented in engine.go

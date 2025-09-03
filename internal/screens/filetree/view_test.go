@@ -358,7 +358,7 @@ func TestRenderTreeItem_EdgeCases(t *testing.T) {
 	}
 
 	rendered := model.renderTreeItem(emptyDir, false)
-	
+
 	// Should contain directory icon and name
 	if !strings.Contains(rendered, "📁") {
 		t.Error("Expected directory icon for empty directory")
@@ -409,10 +409,10 @@ func TestRenderTreeItem_EdgeCases(t *testing.T) {
 
 func TestStatusBar_EmptyTree(t *testing.T) {
 	model := NewFileTreeModel()
-	
+
 	// Test with empty tree
 	statusBar := model.statusBar()
-	
+
 	// Should show all zeros
 	if !strings.Contains(statusBar, "✅ 0 selected") {
 		t.Errorf("Expected status bar to show '✅ 0 selected', got: %s", statusBar)
@@ -431,7 +431,7 @@ func TestStatusBar_EmptyTree(t *testing.T) {
 func TestStatusBar_WithWidth(t *testing.T) {
 	model := NewFileTreeModel()
 	model.width = 100 // Set specific width
-	
+
 	// Add some test data
 	nodes := []*models.FileNode{
 		{
@@ -441,10 +441,10 @@ func TestStatusBar_WithWidth(t *testing.T) {
 			IsSelected:  true,
 		},
 	}
-	
+
 	model.LoadFileTree(nodes)
 	statusBar := model.statusBar()
-	
+
 	// Status bar should include padding for width
 	// (This is hard to test exactly due to lipgloss styling, but we can verify it runs)
 	if len(statusBar) == 0 {

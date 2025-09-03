@@ -79,7 +79,7 @@ type AppState struct {
 	FileTree     filetree.FileTreeModel
 	Template     template.TemplateModel
 	TaskInput    input.TaskInputModel
-	RulesInput   InputModel
+	RulesInput   input.RulesInputModel
 	Confirmation ConfirmModel
 
 	// Progress indicator
@@ -135,10 +135,7 @@ func NewApp() *AppState {
 	app.FileTree = filetree.NewFileTreeModel()
 	app.Template = template.NewTemplateModel()
 	app.TaskInput = input.NewTaskInputModel()
-	app.RulesInput = InputModel{
-		content: "",
-		cursor:  0,
-	}
+	app.RulesInput = input.NewRulesInputModel()
 	app.Confirmation = ConfirmModel{
 		summary: "",
 	}
@@ -172,10 +169,7 @@ func (a *AppState) UpdateWindowSize(msg tea.WindowSizeMsg) {
 
 	a.TaskInput.UpdateSize(msg.Width, msg.Height)
 
-	a.RulesInput.width = msg.Width
-	a.RulesInput.height = msg.Height
-	a.RulesInput.viewport.Width = msg.Width
-	a.RulesInput.viewport.Height = msg.Height - 6
+	a.RulesInput.UpdateSize(msg.Width, msg.Height)
 
 	a.Confirmation.width = msg.Width
 	a.Confirmation.height = msg.Height
@@ -224,9 +218,9 @@ func (a *AppState) saveCurrentScreenState() {
 	case TemplateScreen:
 		a.SelectedTemplate = a.Template.GetSelected()
 	case TaskScreen:
-		a.TaskContent = a.TaskInput.content
+		a.TaskContent = a.TaskInput.GetContent()
 	case RulesScreen:
-		a.RulesContent = a.RulesInput.content
+		a.RulesContent = a.RulesInput.GetContent()
 	}
 }
 
@@ -240,7 +234,7 @@ func (a *AppState) loadScreenState(screen ScreenType) {
 	case TaskScreen:
 		a.TaskInput.SetContent(a.TaskContent)
 	case RulesScreen:
-		a.RulesInput.content = a.RulesContent
+		a.RulesInput.SetContent(a.RulesContent)
 	case ConfirmScreen:
 		// Build confirmation summary
 		a.buildConfirmationSummary()

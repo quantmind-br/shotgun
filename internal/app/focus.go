@@ -22,7 +22,7 @@ func (a *AppState) saveFocusState() *FocusState {
 		}
 	case TemplateScreen:
 		return &FocusState{
-			CursorPosition: a.Template.cursor,
+			CursorPosition: 0, // Template list manages its own cursor internally
 		}
 	case TaskScreen:
 		return &FocusState{
@@ -72,8 +72,7 @@ func (a *AppState) initializeScreenFocus() tea.Cmd {
 		// FileTree manages its own focus internally
 		return nil
 	case TemplateScreen:
-		// Reset cursor to first template
-		a.Template.cursor = 0
+		// Template screen manages its own focus internally
 		return nil
 	case TaskScreen:
 		// Focus on text input, cursor at end of existing content
@@ -100,12 +99,8 @@ func (a *AppState) restoreFileTreeFocus(state *FocusState) tea.Cmd {
 }
 
 func (a *AppState) restoreTemplateFocus(state *FocusState) tea.Cmd {
-	// Validate cursor position
-	if state.CursorPosition >= 0 && state.CursorPosition < len(a.Template.items) {
-		a.Template.cursor = state.CursorPosition
-	} else {
-		a.Template.cursor = 0
-	}
+	// Template list manages its own cursor internally
+	// No direct cursor access needed
 	return nil
 }
 
@@ -115,14 +110,14 @@ func (a *AppState) restoreTaskInputFocus(state *FocusState) tea.Cmd {
 		a.TaskInput.content = state.TextContent
 		a.TaskContent = state.TextContent
 	}
-	
+
 	// Restore cursor position
 	if state.CursorPosition >= 0 && state.CursorPosition <= len(a.TaskInput.content) {
 		a.TaskInput.cursor = state.CursorPosition
 	} else {
 		a.TaskInput.cursor = len(a.TaskInput.content)
 	}
-	
+
 	return nil
 }
 
@@ -132,14 +127,14 @@ func (a *AppState) restoreRulesInputFocus(state *FocusState) tea.Cmd {
 		a.RulesInput.content = state.TextContent
 		a.RulesContent = state.TextContent
 	}
-	
+
 	// Restore cursor position
 	if state.CursorPosition >= 0 && state.CursorPosition <= len(a.RulesInput.content) {
 		a.RulesInput.cursor = state.CursorPosition
 	} else {
 		a.RulesInput.cursor = len(a.RulesInput.content)
 	}
-	
+
 	return nil
 }
 
@@ -214,7 +209,7 @@ func (a *AppState) CanReceiveInput() bool {
 	if !a.IsFocused() {
 		return false
 	}
-	
+
 	switch a.CurrentScreen {
 	case TaskScreen, RulesScreen:
 		// Text input screens can always receive input

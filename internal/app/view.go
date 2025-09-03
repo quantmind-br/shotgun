@@ -65,35 +65,7 @@ func (a *AppState) renderTaskScreen() string {
 }
 
 func (a *AppState) renderRulesScreen() string {
-	var content strings.Builder
-
-	content.WriteString(a.styleScreenTitle("Add Custom Rules (Optional)"))
-	content.WriteString("\n\n")
-
-	content.WriteString("Add any specific rules or constraints:\n\n")
-
-	// Render text input with cursor
-	inputText := a.RulesInput.content
-	if len(inputText) == 0 {
-		inputText = a.stylePlaceholder("Add custom rules or leave empty...")
-	} else {
-		// Insert cursor
-		if a.RulesInput.cursor <= len(inputText) {
-			inputText = inputText[:a.RulesInput.cursor] + a.styleCursor("│") + inputText[a.RulesInput.cursor:]
-		}
-	}
-
-	content.WriteString(a.styleInputBox(inputText))
-	content.WriteString("\n\n")
-
-	content.WriteString("Examples:\n")
-	content.WriteString("• Use TypeScript strict mode\n")
-	content.WriteString("• Follow company coding standards\n")
-	content.WriteString("• Include comprehensive error handling\n\n")
-
-	content.WriteString(a.renderNavigationHelp())
-
-	return content.String()
+	return a.RulesInput.View()
 }
 
 func (a *AppState) renderConfirmationScreen() string {

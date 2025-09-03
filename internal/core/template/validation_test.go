@@ -38,7 +38,7 @@ func TestValidateTemplate_NilTemplate(t *testing.T) {
 func TestValidateRequiredFields_MissingName(t *testing.T) {
 	template := &models.Template{
 		ID:          "test-template",
-		Name:        "",  // Missing name
+		Name:        "", // Missing name
 		Version:     "1.0.0",
 		Description: "A test template",
 		Content:     "Hello world!",
@@ -54,7 +54,7 @@ func TestValidateRequiredFields_MissingVersion(t *testing.T) {
 	template := &models.Template{
 		ID:          "test-template",
 		Name:        "Test Template",
-		Version:     "",  // Missing version
+		Version:     "", // Missing version
 		Description: "A test template",
 		Content:     "Hello world!",
 	}
@@ -70,7 +70,7 @@ func TestValidateRequiredFields_MissingDescription(t *testing.T) {
 		ID:          "test-template",
 		Name:        "Test Template",
 		Version:     "1.0.0",
-		Description: "",  // Missing description
+		Description: "", // Missing description
 		Content:     "Hello world!",
 	}
 
@@ -86,7 +86,7 @@ func TestValidateRequiredFields_MissingContent(t *testing.T) {
 		Name:        "Test Template",
 		Version:     "1.0.0",
 		Description: "A test template",
-		Content:     "",  // Missing content
+		Content:     "", // Missing content
 	}
 
 	err := validateRequiredFields(template)
@@ -97,7 +97,7 @@ func TestValidateRequiredFields_MissingContent(t *testing.T) {
 
 func TestValidateRequiredFields_MissingID(t *testing.T) {
 	template := &models.Template{
-		ID:          "",  // Missing ID
+		ID:          "", // Missing ID
 		Name:        "Test Template",
 		Version:     "1.0.0",
 		Description: "A test template",
@@ -118,19 +118,19 @@ func TestIsValidVersion(t *testing.T) {
 		{"1.0.0", true},
 		{"0.1.0", true},
 		{"10.20.30", true},
-		{"1.0", false},        // Not 3 parts
-		{"1.0.0.0", false},    // Too many parts
-		{"1.0.a", false},      // Non-numeric
-		{"", false},           // Empty
-		{"1..0", false},       // Empty part
-		{"1.0.", false},       // Trailing dot
+		{"1.0", false},     // Not 3 parts
+		{"1.0.0.0", false}, // Too many parts
+		{"1.0.a", false},   // Non-numeric
+		{"", false},        // Empty
+		{"1..0", false},    // Empty part
+		{"1.0.", false},    // Trailing dot
 	}
 
 	for _, test := range tests {
 		t.Run(test.version, func(t *testing.T) {
 			result := isValidVersion(test.version)
 			if result != test.valid {
-				t.Errorf("For version '%s', expected %v, got %v", 
+				t.Errorf("For version '%s', expected %v, got %v",
 					test.version, test.valid, result)
 			}
 		})
@@ -241,7 +241,7 @@ func TestValidateVariable_ChoiceType(t *testing.T) {
 func TestValidateVariable_BooleanType(t *testing.T) {
 	// Valid boolean defaults
 	validDefaults := []string{"", "true", "false"}
-	
+
 	for _, defaultVal := range validDefaults {
 		boolean := models.Variable{
 			Name:    "enabled",
@@ -251,7 +251,7 @@ func TestValidateVariable_BooleanType(t *testing.T) {
 
 		err := validateVariable("enabled", boolean)
 		if err != nil {
-			t.Errorf("Expected no error for boolean with default '%s', got: %v", 
+			t.Errorf("Expected no error for boolean with default '%s', got: %v",
 				defaultVal, err)
 		}
 	}
@@ -347,16 +347,16 @@ func TestValidateContent(t *testing.T) {
 	for _, content := range validContent {
 		err := validateContent(content)
 		if err != nil {
-			t.Errorf("Expected no error for valid content '%s', got: %v", 
+			t.Errorf("Expected no error for valid content '%s', got: %v",
 				content, err)
 		}
 	}
 
 	// Invalid content
 	invalidContent := []string{
-		"",           // Empty
-		"   ",        // Only whitespace
-		"Unclosed {{variable",  // Missing closing
+		"",                    // Empty
+		"   ",                 // Only whitespace
+		"Unclosed {{variable", // Missing closing
 		"Unopened variable}}", // Missing opening
 	}
 

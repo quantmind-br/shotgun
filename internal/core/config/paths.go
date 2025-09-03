@@ -33,10 +33,10 @@ func getUserTemplatesDir() (string, error) {
 	}
 
 	templatesDir := filepath.Join(baseDir, "shotgun-cli", "templates")
-	
+
 	// Clean the path to prevent any path traversal issues
 	cleanPath := filepath.Clean(templatesDir)
-	
+
 	return cleanPath, nil
 }
 
@@ -48,7 +48,7 @@ func ensureTemplateDir(path string) error {
 
 	// Clean the path for security
 	cleanPath := filepath.Clean(path)
-	
+
 	// Check if it already exists
 	info, err := os.Stat(cleanPath)
 	if err == nil {
@@ -75,7 +75,7 @@ func GetUserTemplatesDir() (string, error) {
 	return getUserTemplatesDir()
 }
 
-// EnsureTemplateDir is a public wrapper for ensureTemplateDir  
+// EnsureTemplateDir is a public wrapper for ensureTemplateDir
 func EnsureTemplateDir(path string) error {
 	return ensureTemplateDir(path)
 }
@@ -85,29 +85,29 @@ func validatePathSafety(basePath, targetPath string) error {
 	// Clean both paths
 	cleanBase := filepath.Clean(basePath)
 	cleanTarget := filepath.Clean(targetPath)
-	
+
 	// Convert to absolute paths
 	absBase, err := filepath.Abs(cleanBase)
 	if err != nil {
 		return fmt.Errorf("failed to resolve base path: %w", err)
 	}
-	
+
 	absTarget, err := filepath.Abs(cleanTarget)
 	if err != nil {
 		return fmt.Errorf("failed to resolve target path: %w", err)
 	}
-	
+
 	// Ensure target is within base directory
 	relPath, err := filepath.Rel(absBase, absTarget)
 	if err != nil {
 		return fmt.Errorf("failed to determine relative path: %w", err)
 	}
-	
+
 	// Check for path traversal attempts
 	if len(relPath) > 0 && (relPath[0:1] == "." || filepath.IsAbs(relPath)) {
 		return fmt.Errorf("path traversal detected: %s", targetPath)
 	}
-	
+
 	return nil
 }
 

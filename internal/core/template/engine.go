@@ -20,14 +20,14 @@ func parseTemplateFromData(data []byte) (*models.Template, error) {
 	}
 
 	var rawTemplate struct {
-		ID          string                         `toml:"id"`
-		Name        string                         `toml:"name"`
-		Version     string                         `toml:"version"`
-		Description string                         `toml:"description"`
-		Author      string                         `toml:"author"`
-		Tags        []string                       `toml:"tags"`
-		Variables   map[string]tomlVariable        `toml:"variables"`
-		Content     string                         `toml:"content"`
+		ID          string                  `toml:"id"`
+		Name        string                  `toml:"name"`
+		Version     string                  `toml:"version"`
+		Description string                  `toml:"description"`
+		Author      string                  `toml:"author"`
+		Tags        []string                `toml:"tags"`
+		Variables   map[string]tomlVariable `toml:"variables"`
+		Content     string                  `toml:"content"`
 	}
 
 	// Parse TOML data
@@ -92,11 +92,11 @@ func generateTemplateID(name string) string {
 	if name == "" {
 		return "unnamed-template"
 	}
-	
+
 	// Simple ID generation: lowercase, replace spaces with dashes
 	id := ""
 	lastWasDash := true // Start as true to avoid leading dashes
-	
+
 	for _, r := range name {
 		switch {
 		case r >= 'A' && r <= 'Z':
@@ -112,15 +112,15 @@ func generateTemplateID(name string) string {
 			}
 		}
 	}
-	
+
 	// Remove trailing dash if any
 	if len(id) > 0 && id[len(id)-1] == '-' {
 		id = id[:len(id)-1]
 	}
-	
+
 	if id == "" {
 		return "unnamed-template"
 	}
-	
+
 	return id
 }

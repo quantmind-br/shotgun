@@ -135,11 +135,11 @@ func TestInitializeSelection(t *testing.T) {
 
 func TestBuildTreeStructure_EmptyNodes(t *testing.T) {
 	model := NewFileTreeModel()
-	
+
 	// Test with empty slice
 	var emptyNodes []*models.FileNode
 	result := model.buildTreeStructure(emptyNodes)
-	
+
 	if len(result) != 0 {
 		t.Errorf("Expected empty result for empty nodes, got %d nodes", len(result))
 	}
@@ -147,7 +147,7 @@ func TestBuildTreeStructure_EmptyNodes(t *testing.T) {
 
 func TestBuildTreeStructure_SingleFile(t *testing.T) {
 	model := NewFileTreeModel()
-	
+
 	// Test with single file
 	nodes := []*models.FileNode{
 		{
@@ -157,13 +157,13 @@ func TestBuildTreeStructure_SingleFile(t *testing.T) {
 			IsSelected:  true,
 		},
 	}
-	
+
 	result := model.buildTreeStructure(nodes)
-	
+
 	if len(result) != 1 {
 		t.Errorf("Expected 1 root node, got %d", len(result))
 	}
-	
+
 	// The result should be a file.txt node with correct properties
 	if result[0].Name != "file.txt" {
 		t.Errorf("Expected node name 'file.txt', got '%s'", result[0].Name)
@@ -236,7 +236,7 @@ func TestBuildTreeStructure(t *testing.T) {
 func TestInit(t *testing.T) {
 	model := NewFileTreeModel()
 	cmd := model.Init()
-	
+
 	// Init should return nil command for FileTree
 	if cmd != nil {
 		t.Error("Expected Init to return nil command")
@@ -246,18 +246,18 @@ func TestInit(t *testing.T) {
 func TestLoadFromScanner(t *testing.T) {
 	model := NewFileTreeModel()
 	ctx := context.Background()
-	
+
 	// Test with empty root path
 	cmd := model.LoadFromScanner(ctx, "")
-	
+
 	// Should return a command
 	if cmd == nil {
 		t.Error("Expected LoadFromScanner to return a command")
 	}
-	
+
 	// Execute the command to test it
 	msg := cmd()
-	
+
 	// Should return either ScanCompleteMsg or ScanErrorMsg
 	switch msg.(type) {
 	case ScanCompleteMsg:
@@ -272,18 +272,18 @@ func TestLoadFromScanner(t *testing.T) {
 func TestLoadFromScannerStreaming(t *testing.T) {
 	model := NewFileTreeModel()
 	ctx := context.Background()
-	
+
 	// Test with empty root path (error case)
 	cmd := model.LoadFromScannerStreaming(ctx, "")
-	
+
 	// Should return a command
 	if cmd == nil {
 		t.Error("Expected LoadFromScannerStreaming to return a command")
 	}
-	
+
 	// Execute the command to test it
 	msg := cmd()
-	
+
 	// Should return either ScanErrorMsg or ScanCompleteMsg (depending on implementation)
 	switch msg.(type) {
 	case ScanErrorMsg, ScanCompleteMsg:
@@ -291,7 +291,7 @@ func TestLoadFromScannerStreaming(t *testing.T) {
 	default:
 		t.Errorf("Expected ScanErrorMsg or ScanCompleteMsg for empty path, got %T", msg)
 	}
-	
+
 	// Test with valid root path
 	cmd2 := model.LoadFromScannerStreaming(ctx, ".")
 	if cmd2 == nil {

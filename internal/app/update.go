@@ -122,6 +122,28 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case input.BackToTemplateMsg:
 			a.SetCurrentScreen(TemplateScreen)
 		}
+
+	case RulesScreen:
+		updatedModel, cmd := a.RulesInput.Update(msg)
+		a.RulesInput = updatedModel
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		// Update AppState.RulesContent with current textarea content
+		a.RulesContent = a.RulesInput.GetContent()
+
+		// Handle rules screen specific messages
+		switch msg := msg.(type) {
+		case input.RulesInputMsg:
+			// Advance to confirmation screen when rules input is complete
+			a.SetCurrentScreen(ConfirmScreen)
+		case input.BackToTaskMsg:
+			a.SetCurrentScreen(TaskScreen)
+		case input.SkipRulesMsg:
+			// Skip rules screen entirely and go to confirmation
+			a.SetCurrentScreen(ConfirmScreen)
+		}
 	}
 
 	return a, tea.Batch(cmds...)
@@ -146,42 +168,13 @@ func (a *AppState) handleTaskInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (a *AppState) handleRulesInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+a":
-		a.RulesInput.cursor = 0
-	case "ctrl+e":
-		a.RulesInput.cursor = len(a.RulesInput.content)
-	case "left":
-		if a.RulesInput.cursor > 0 {
-			a.RulesInput.cursor--
-		}
-	case "right":
-		if a.RulesInput.cursor < len(a.RulesInput.content) {
-			a.RulesInput.cursor++
-		}
-	case "backspace":
-		if a.RulesInput.cursor > 0 && len(a.RulesInput.content) > 0 {
-			a.RulesInput.content = a.RulesInput.content[:a.RulesInput.cursor-1] + a.RulesInput.content[a.RulesInput.cursor:]
-			a.RulesInput.cursor--
-			a.RulesContent = a.RulesInput.content
-		}
-	case "delete":
-		if a.RulesInput.cursor < len(a.RulesInput.content) {
-			a.RulesInput.content = a.RulesInput.content[:a.RulesInput.cursor] + a.RulesInput.content[a.RulesInput.cursor+1:]
-			a.RulesContent = a.RulesInput.content
-		}
-	default:
-		// Handle regular character input
-		if len(msg.Runes) > 0 {
-			char := string(msg.Runes[0])
-			if len(char) == 1 && char >= " " { // Printable character
-				a.RulesInput.content = a.RulesInput.content[:a.RulesInput.cursor] + char + a.RulesInput.content[a.RulesInput.cursor:]
-				a.RulesInput.cursor++
-				a.RulesContent = a.RulesInput.content
-			}
-		}
-	}
-	return a, nil
+	updatedModel, cmd := a.RulesInput.Update(msg)
+	a.RulesInput = updatedModel
+	
+	// Update AppState.RulesContent with current textarea content
+	a.RulesContent = a.RulesInput.GetContent()
+	
+	return a, cmd
 }
 
 func (a *AppState) handleConfirmationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

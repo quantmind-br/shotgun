@@ -89,7 +89,7 @@ func validateVariable(name string, variable models.Variable) error {
 
 	// Validate variable type
 	if !isValidVariableType(variable.Type) {
-		return fmt.Errorf("invalid variable type: %s (valid types: %v)", 
+		return fmt.Errorf("invalid variable type: %s (valid types: %v)",
 			variable.Type, models.ValidVariableTypes)
 	}
 
@@ -109,7 +109,7 @@ func validateVariable(name string, variable models.Variable) error {
 				}
 			}
 			if !found {
-				return fmt.Errorf("default value '%s' is not in options %v", 
+				return fmt.Errorf("default value '%s' is not in options %v",
 					variable.Default, variable.Options)
 			}
 		}
@@ -117,7 +117,7 @@ func validateVariable(name string, variable models.Variable) error {
 		// Validate boolean default
 		if variable.Default != "" {
 			if variable.Default != "true" && variable.Default != "false" {
-				return fmt.Errorf("boolean variable default must be 'true' or 'false', got: %s", 
+				return fmt.Errorf("boolean variable default must be 'true' or 'false', got: %s",
 					variable.Default)
 			}
 		}
@@ -131,18 +131,18 @@ func validateVariable(name string, variable models.Variable) error {
 	}
 
 	if variable.MaxLength > 0 && variable.MaxLength < variable.MinLength {
-		return fmt.Errorf("MaxLength (%d) cannot be less than MinLength (%d)", 
+		return fmt.Errorf("MaxLength (%d) cannot be less than MinLength (%d)",
 			variable.MaxLength, variable.MinLength)
 	}
 
 	// Validate default value meets length constraints
 	if variable.Default != "" {
 		if len(variable.Default) < variable.MinLength {
-			return fmt.Errorf("default value length (%d) is less than MinLength (%d)", 
+			return fmt.Errorf("default value length (%d) is less than MinLength (%d)",
 				len(variable.Default), variable.MinLength)
 		}
 		if variable.MaxLength > 0 && len(variable.Default) > variable.MaxLength {
-			return fmt.Errorf("default value length (%d) exceeds MaxLength (%d)", 
+			return fmt.Errorf("default value length (%d) exceeds MaxLength (%d)",
 				len(variable.Default), variable.MaxLength)
 		}
 	}

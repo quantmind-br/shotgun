@@ -30,7 +30,7 @@ func (a *AppState) showHelp() (tea.Model, tea.Cmd) {
 	a.ShowingHelp = true
 	a.HelpContent = a.getHelpContent()
 	a.Error = nil // Clear any errors
-	
+
 	return a, nil
 }
 
@@ -41,7 +41,7 @@ func (a *AppState) goToPreviousScreen() (tea.Model, tea.Cmd) {
 		// Already at first screen
 		return a, nil
 	}
-	
+
 	// Navigate to previous screen
 	switch a.CurrentScreen {
 	case TemplateScreen:
@@ -53,7 +53,7 @@ func (a *AppState) goToPreviousScreen() (tea.Model, tea.Cmd) {
 	case ConfirmScreen:
 		a.SetCurrentScreen(RulesScreen)
 	}
-	
+
 	return a, nil
 }
 
@@ -65,10 +65,10 @@ func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
 		a.Error = a.getValidationError()
 		return a, nil
 	}
-	
+
 	// Clear any previous errors
 	a.Error = nil
-	
+
 	// Navigate to next screen
 	switch a.CurrentScreen {
 	case FileTreeScreen:
@@ -83,7 +83,7 @@ func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
 		// At final screen, could trigger completion
 		return a, tea.Quit
 	}
-	
+
 	return a, nil
 }
 

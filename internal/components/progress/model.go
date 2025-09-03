@@ -9,9 +9,9 @@ import (
 
 // Model represents the progress indicator component
 type Model struct {
-	current int    // Current step (1-based)
-	total   int    // Total steps
-	width   int    // Available width for rendering
+	current int      // Current step (1-based)
+	total   int      // Total steps
+	width   int      // Available width for rendering
 	titles  []string // Step titles
 }
 
@@ -45,28 +45,28 @@ func (m Model) View() string {
 // renderProgress renders the complete progress indicator
 func (m Model) renderProgress() string {
 	var result strings.Builder
-	
+
 	// Render step counter (e.g., "Step 2 of 5")
 	stepCounter := fmt.Sprintf("Step %d of %d", m.current, m.total)
 	result.WriteString(m.styleStepCounter(stepCounter))
 	result.WriteString("\n")
-	
+
 	// Render current step title if available
 	if len(m.titles) >= m.current {
 		title := m.titles[m.current-1]
 		result.WriteString(m.styleStepTitle(title))
 		result.WriteString("\n")
 	}
-	
+
 	// Render progress bar
 	progressBar := m.renderProgressBar()
 	result.WriteString(progressBar)
 	result.WriteString("\n")
-	
+
 	// Render step indicators
 	stepIndicators := m.renderStepIndicators()
 	result.WriteString(stepIndicators)
-	
+
 	return result.String()
 }
 
@@ -75,45 +75,45 @@ func (m Model) renderProgressBar() string {
 	if m.width < 20 {
 		return ""
 	}
-	
+
 	// Calculate progress percentage
 	progress := float64(m.current-1) / float64(m.total-1)
 	if m.total == 1 {
 		progress = 1.0
 	}
-	
+
 	// Available width for the bar (accounting for brackets and padding)
 	barWidth := m.width - 10
 	if barWidth < 10 {
 		barWidth = 10
 	}
-	
+
 	// Calculate filled and empty segments
 	filledWidth := int(float64(barWidth) * progress)
 	emptyWidth := barWidth - filledWidth
-	
+
 	// Build the bar
 	var bar strings.Builder
 	bar.WriteString("[")
 	bar.WriteString(strings.Repeat("█", filledWidth))
 	bar.WriteString(strings.Repeat("░", emptyWidth))
 	bar.WriteString("]")
-	
+
 	// Add percentage
 	percentage := fmt.Sprintf(" %.0f%%", progress*100)
 	bar.WriteString(percentage)
-	
+
 	return m.styleProgressBar(bar.String())
 }
 
 // renderStepIndicators creates step-by-step indicators (1 → 2 → 3 → 4 → 5)
 func (m Model) renderStepIndicators() string {
 	var indicators strings.Builder
-	
+
 	for i := 1; i <= m.total; i++ {
 		// Add step number with appropriate styling
 		stepText := fmt.Sprintf("%d", i)
-		
+
 		if i == m.current {
 			// Current step - highlighted
 			indicators.WriteString(m.styleCurrentStep(stepText))
@@ -124,7 +124,7 @@ func (m Model) renderStepIndicators() string {
 			// Future step
 			indicators.WriteString(m.styleFutureStep(stepText))
 		}
-		
+
 		// Add arrow separator except for last step
 		if i < m.total {
 			if i < m.current {
@@ -134,7 +134,7 @@ func (m Model) renderStepIndicators() string {
 			}
 		}
 	}
-	
+
 	return indicators.String()
 }
 
@@ -163,7 +163,7 @@ func (m Model) styleProgressBar(text string) string {
 func (m Model) styleCurrentStep(text string) string {
 	return lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("0")).   // Black text
+		Foreground(lipgloss.Color("0")).  // Black text
 		Background(lipgloss.Color("12")). // Blue background
 		Padding(0, 1).
 		Render(text)

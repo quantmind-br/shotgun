@@ -70,7 +70,7 @@ func NewTemplateError(errorType ErrorType, templatePath, message string, cause e
 
 // NewParsingError creates a parsing error
 func NewParsingError(templatePath string, cause error) *TemplateError {
-	return NewTemplateError(ErrorTypeParsing, templatePath, 
+	return NewTemplateError(ErrorTypeParsing, templatePath,
 		"failed to parse TOML template", cause)
 }
 
@@ -135,11 +135,11 @@ func (ea *ErrorAggregator) Error() string {
 	if len(ea.errors) == 0 {
 		return "no errors"
 	}
-	
+
 	if len(ea.errors) == 1 {
 		return ea.errors[0].Error()
 	}
-	
+
 	return fmt.Sprintf("multiple errors occurred (%d): %v", len(ea.errors), ea.errors)
 }
 

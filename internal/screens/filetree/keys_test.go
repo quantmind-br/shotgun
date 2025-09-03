@@ -29,7 +29,7 @@ func TestDefaultKeyMap(t *testing.T) {
 	if !keyMap.VimUp.Enabled() {
 		t.Error("Expected VimUp key to be enabled")
 	}
-	
+
 	vimUpKeys := keyMap.VimUp.Keys()
 	hasK := false
 	for _, k := range vimUpKeys {
@@ -130,20 +130,20 @@ func TestFullHelp(t *testing.T) {
 
 func TestKeyMapHelp(t *testing.T) {
 	keyMap := DefaultKeyMap()
-	
+
 	// Test that we can get help string from a key
 	upHelp := keyMap.Up.Help()
 	if upHelp.Key == "" {
 		t.Error("Expected Up key to have help text")
 	}
-	
+
 	// Test space key help
 	spaceHelp := keyMap.Toggle.Help()
 	if spaceHelp.Key == "" {
 		t.Error("Expected Toggle key to have help text")
 	}
-	if !strings.Contains(strings.ToLower(spaceHelp.Desc), "toggle") && 
-	   !strings.Contains(strings.ToLower(spaceHelp.Desc), "select") {
+	if !strings.Contains(strings.ToLower(spaceHelp.Desc), "toggle") &&
+		!strings.Contains(strings.ToLower(spaceHelp.Desc), "select") {
 		t.Error("Expected Toggle key help to mention toggle or select")
 	}
 }

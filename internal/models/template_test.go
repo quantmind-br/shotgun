@@ -147,7 +147,7 @@ func TestVariable_Types(t *testing.T) {
 			if tt.variable.Name == "" && tt.valid {
 				t.Error("Valid variable should have a name")
 			}
-			
+
 			// Check if type is in valid types
 			isValidType := false
 			for _, validType := range ValidVariableTypes {
@@ -156,7 +156,7 @@ func TestVariable_Types(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if tt.valid && !isValidType {
 				t.Errorf("Type %s should be valid", tt.variable.Type)
 			}
@@ -189,21 +189,21 @@ func TestTemplateInfo(t *testing.T) {
 		Name:    "Info Test",
 		Version: "1.0.0",
 	}
-	
+
 	info := TemplateInfo{
 		Template: template,
 		Source:   TemplateSourceBuiltIn,
 		FilePath: "/embedded/test.toml",
 	}
-	
+
 	if info.Template.ID != template.ID {
 		t.Errorf("Expected template ID %s, got %s", template.ID, info.Template.ID)
 	}
-	
+
 	if info.Source != TemplateSourceBuiltIn {
 		t.Errorf("Expected source %v, got %v", TemplateSourceBuiltIn, info.Source)
 	}
-	
+
 	if info.Source.String() != "builtin" {
 		t.Errorf("Expected source string 'builtin', got %s", info.Source.String())
 	}
