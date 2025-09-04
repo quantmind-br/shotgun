@@ -26,13 +26,13 @@ func (a *AppState) saveFocusState() *FocusState {
 		}
 	case TaskScreen:
 		return &FocusState{
-			CursorPosition: a.TaskInput.cursor,
-			TextContent:    a.TaskInput.content,
+			CursorPosition: 0, // Textarea manages cursor internally
+			TextContent:    a.TaskInput.GetContent(),
 		}
 	case RulesScreen:
 		return &FocusState{
-			CursorPosition: a.RulesInput.cursor,
-			TextContent:    a.RulesInput.content,
+			CursorPosition: 0, // Textarea manages cursor internally
+			TextContent:    a.RulesInput.GetContent(),
 		}
 	case ConfirmScreen:
 		return &FocusState{
@@ -75,12 +75,10 @@ func (a *AppState) initializeScreenFocus() tea.Cmd {
 		// Template screen manages its own focus internally
 		return nil
 	case TaskScreen:
-		// Focus on text input, cursor at end of existing content
-		a.TaskInput.cursor = len(a.TaskInput.content)
+		// Focus on text input, cursor managed by textarea component
 		return nil
 	case RulesScreen:
-		// Focus on text input, cursor at end of existing content
-		a.RulesInput.cursor = len(a.RulesInput.content)
+		// Focus on text input, cursor managed by textarea component
 		return nil
 	case ConfirmScreen:
 		// Scroll to top of confirmation screen
@@ -107,16 +105,12 @@ func (a *AppState) restoreTemplateFocus(state *FocusState) tea.Cmd {
 func (a *AppState) restoreTaskInputFocus(state *FocusState) tea.Cmd {
 	// Restore text content if provided
 	if state.TextContent != "" {
-		a.TaskInput.content = state.TextContent
+		a.TaskInput.SetContent(state.TextContent)
 		a.TaskContent = state.TextContent
 	}
 
-	// Restore cursor position
-	if state.CursorPosition >= 0 && state.CursorPosition <= len(a.TaskInput.content) {
-		a.TaskInput.cursor = state.CursorPosition
-	} else {
-		a.TaskInput.cursor = len(a.TaskInput.content)
-	}
+	// Cursor position is managed internally by textarea component
+	// No need to manually set cursor position
 
 	return nil
 }
@@ -124,16 +118,12 @@ func (a *AppState) restoreTaskInputFocus(state *FocusState) tea.Cmd {
 func (a *AppState) restoreRulesInputFocus(state *FocusState) tea.Cmd {
 	// Restore text content if provided
 	if state.TextContent != "" {
-		a.RulesInput.content = state.TextContent
+		a.RulesInput.SetContent(state.TextContent)
 		a.RulesContent = state.TextContent
 	}
 
-	// Restore cursor position
-	if state.CursorPosition >= 0 && state.CursorPosition <= len(a.RulesInput.content) {
-		a.RulesInput.cursor = state.CursorPosition
-	} else {
-		a.RulesInput.cursor = len(a.RulesInput.content)
-	}
+	// Cursor position is managed internally by textarea component
+	// No need to manually set cursor position
 
 	return nil
 }
@@ -181,11 +171,11 @@ func (a *AppState) CleanupScreenCmd() tea.Cmd {
 		return nil
 	case TaskScreen:
 		// Save task content before leaving
-		a.TaskContent = a.TaskInput.content
+		a.TaskContent = a.TaskInput.GetContent()
 		return nil
 	case RulesScreen:
 		// Save rules content before leaving
-		a.RulesContent = a.RulesInput.content
+		a.RulesContent = a.RulesInput.GetContent()
 		return nil
 	case ConfirmScreen:
 		// Confirmation cleanup if needed

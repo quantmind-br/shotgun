@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 func TestView_EmptyModel(t *testing.T) {

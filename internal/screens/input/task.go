@@ -28,6 +28,9 @@ type TaskInputModel struct {
 	// Screen state
 	ready bool
 	err   error
+
+	// Key mappings
+	keyMap KeyMap
 }
 
 // NewTaskInputModel creates a new task input screen model
@@ -51,6 +54,7 @@ func NewTaskInputModel() TaskInputModel {
 		height:    25,
 		ready:     false,
 		err:       nil,
+		keyMap:    DefaultKeyMap(),
 	}
 }
 
@@ -131,4 +135,14 @@ func (m *TaskInputModel) updateCounters() {
 	if m.lineCount == 0 {
 		m.lineCount = 1
 	}
+}
+
+// Focused returns true if the textarea is currently focused for text input
+func (t TaskInputModel) Focused() bool {
+	return t.textarea.Focused()
+}
+
+// Blur removes focus from the textarea
+func (t *TaskInputModel) Blur() {
+	t.textarea.Blur()
 }

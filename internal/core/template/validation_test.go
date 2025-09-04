@@ -3,7 +3,7 @@ package template
 import (
 	"testing"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 func TestValidateTemplate_ValidTemplate(t *testing.T) {

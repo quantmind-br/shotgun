@@ -6,11 +6,14 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/user/shotgun-cli/internal/components/progress"
-	"github.com/user/shotgun-cli/internal/models"
-	"github.com/user/shotgun-cli/internal/screens/filetree"
-	"github.com/user/shotgun-cli/internal/screens/input"
-	"github.com/user/shotgun-cli/internal/screens/template"
+	"github.com/diogopedro/shotgun/internal/components/help"
+	"github.com/diogopedro/shotgun/internal/components/progress"
+	"github.com/diogopedro/shotgun/internal/models"
+	"github.com/diogopedro/shotgun/internal/screens/confirm"
+	"github.com/diogopedro/shotgun/internal/screens/filetree"
+	"github.com/diogopedro/shotgun/internal/screens/generate"
+	"github.com/diogopedro/shotgun/internal/screens/input"
+	"github.com/diogopedro/shotgun/internal/screens/template"
 )
 
 // ScreenType represents the different screens in the wizard
@@ -22,6 +25,7 @@ const (
 	TaskScreen
 	RulesScreen
 	ConfirmScreen
+	GenerateScreen
 )
 
 // String returns the string representation of ScreenType
@@ -37,6 +41,8 @@ func (s ScreenType) String() string {
 		return "RulesInput"
 	case ConfirmScreen:
 		return "Confirm"
+	case GenerateScreen:
+		return "Generate"
 	default:
 		return "Unknown"
 	}
@@ -63,12 +69,7 @@ type InputModel struct {
 // Legacy TemplateModel - remove once migration complete
 
 // ConfirmModel represents confirmation screen model
-type ConfirmModel struct {
-	summary  string
-	viewport viewport.Model
-	width    int
-	height   int
-}
+type ConfirmModel = confirm.ConfirmModel
 
 // AppState manages the overall application state
 type AppState struct {
@@ -81,9 +82,13 @@ type AppState struct {
 	TaskInput    input.TaskInputModel
 	RulesInput   input.RulesInputModel
 	Confirmation ConfirmModel
+	Generation   generate.GenerateModel
 
 	// Progress indicator
 	Progress progress.Model
+
+	// Help overlay
+	Help help.HelpModel
 
 	// Shared data across screens
 	SelectedFiles    []string
@@ -99,6 +104,9 @@ type AppState struct {
 	ShowingHelp bool
 	HelpContent string
 	ShowingExit bool
+
+	// Input mode tracking
+	InputMode bool
 
 	// Context for cancellation
 	ctx    context.Context
@@ -116,6 +124,7 @@ func NewApp() *AppState {
 		"Describe Task",
 		"Add Rules (Optional)",
 		"Review & Confirm",
+		"Generate Prompt",
 	}
 
 	app := &AppState{
@@ -136,12 +145,15 @@ func NewApp() *AppState {
 	app.Template = template.NewTemplateModel()
 	app.TaskInput = input.NewTaskInputModel()
 	app.RulesInput = input.NewRulesInputModel()
-	app.Confirmation = ConfirmModel{
-		summary: "",
-	}
+	app.Confirmation = confirm.NewConfirmModel()
+	app.Generation = generate.NewGenerateModel()
 
 	// Initialize progress indicator
-	app.Progress = progress.NewModel(1, 5, screenTitles)
+	app.Progress = progress.NewModel(1, 6, screenTitles)
+
+	// Initialize help overlay
+	app.Help = help.NewHelpModel()
+	app.Help.SetCurrentScreen(help.ScreenType(app.CurrentScreen))
 
 	return app
 }
@@ -171,10 +183,12 @@ func (a *AppState) UpdateWindowSize(msg tea.WindowSizeMsg) {
 
 	a.RulesInput.UpdateSize(msg.Width, msg.Height)
 
-	a.Confirmation.width = msg.Width
-	a.Confirmation.height = msg.Height
-	a.Confirmation.viewport.Width = msg.Width
-	a.Confirmation.viewport.Height = msg.Height - 6
+	a.Confirmation.UpdateWindowSize(msg.Width, msg.Height)
+
+	a.Generation.UpdateWindowSize(msg.Width, msg.Height)
+
+	// Update help overlay size
+	a.Help.UpdateSize(msg.Width, msg.Height)
 }
 
 // GetCurrentScreenModel returns the current active screen model
@@ -191,6 +205,8 @@ func (a *AppState) GetCurrentScreenModel() interface{} {
 		return &a.RulesInput
 	case ConfirmScreen:
 		return &a.Confirmation
+	case GenerateScreen:
+		return &a.Generation
 	default:
 		return &a.FileTree
 	}
@@ -205,6 +221,9 @@ func (a *AppState) SetCurrentScreen(screen ScreenType) {
 
 	// Update progress indicator
 	a.Progress.SetCurrent(int(screen) + 1)
+
+	// Update help overlay context
+	a.Help.SetCurrentScreen(help.ScreenType(screen))
 
 	// Load state into new screen
 	a.loadScreenState(screen)
@@ -238,32 +257,20 @@ func (a *AppState) loadScreenState(screen ScreenType) {
 	case ConfirmScreen:
 		// Build confirmation summary
 		a.buildConfirmationSummary()
+	case GenerateScreen:
+		// Initialize generation screen with current app state
+		a.initializeGenerationScreen()
 	}
 }
 
 // buildConfirmationSummary creates a summary for the confirmation screen
 func (a *AppState) buildConfirmationSummary() {
-	summary := "Configuration Summary:\n\n"
+	// Set the confirmation data using the proper method
+	a.Confirmation.SetData(a.SelectedTemplate, a.SelectedFiles, a.TaskContent, a.RulesContent)
+}
 
-	if len(a.SelectedFiles) > 0 {
-		summary += "Selected Files:\n"
-		for _, file := range a.SelectedFiles {
-			summary += "  • " + file + "\n"
-		}
-		summary += "\n"
-	}
-
-	if a.SelectedTemplate != nil {
-		summary += "Selected Template: " + a.SelectedTemplate.Name + "\n\n"
-	}
-
-	if a.TaskContent != "" {
-		summary += "Task Description:\n" + a.TaskContent + "\n\n"
-	}
-
-	if a.RulesContent != "" {
-		summary += "Custom Rules:\n" + a.RulesContent + "\n\n"
-	}
-
-	a.Confirmation.summary = summary
+// initializeGenerationScreen prepares the generation screen with current app state
+func (a *AppState) initializeGenerationScreen() {
+	// The generation screen will be initialized when generation starts
+	// We don't need to do anything here as the screen handles its own initialization
 }

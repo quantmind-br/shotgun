@@ -2,7 +2,7 @@ package filetree
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // treeItem represents a flattened tree item for navigation

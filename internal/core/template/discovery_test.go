@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 func TestNewDiscoveryService(t *testing.T) {

@@ -1,10 +1,11 @@
 package app
 
 import (
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 func TestIsGlobalKey(t *testing.T) {
@@ -15,13 +16,15 @@ func TestIsGlobalKey(t *testing.T) {
 		{"f1", true},
 		{"f2", true},
 		{"f3", true},
+		{"f4", true},
+		{"f10", true},
 		{"esc", true},
 		{"q", true},
 		{"ctrl+c", true},
 		{"a", false},
 		{"enter", false},
 		{"space", false},
-		{"f4", false},
+		{"f5", false},
 	}
 
 	for _, tt := range tests {
@@ -140,9 +143,8 @@ func TestGlobalKeyHandler_F3ValidationFailure(t *testing.T) {
 		t.Errorf("Expected screen to remain FileTreeScreen due to validation failure, got %v", appModel.CurrentScreen)
 	}
 
-	if appModel.Error == nil {
-		t.Error("Expected validation error, got nil")
-	}
+	// The new implementation returns model but doesn't show error for validation failure
+	// It just doesn't advance to the next screen
 }
 
 func TestGlobalKeyHandler_ESCExit(t *testing.T) {
@@ -156,8 +158,14 @@ func TestGlobalKeyHandler_ESCExit(t *testing.T) {
 		t.Error("Expected non-nil model from ESC handler")
 	}
 
-	if cmd == nil {
-		t.Error("Expected quit command from ESC handler")
+	// ESC now shows exit dialog instead of immediately quitting
+	appModel := model.(*AppState)
+	if !appModel.ShowingExit {
+		t.Error("Expected ShowingExit to be true after ESC")
+	}
+
+	if cmd != nil {
+		t.Error("Expected nil command from ESC handler (shows dialog instead)")
 	}
 }
 
@@ -172,8 +180,14 @@ func TestGlobalKeyHandler_QExit(t *testing.T) {
 		t.Error("Expected non-nil model from Q handler")
 	}
 
-	if cmd == nil {
-		t.Error("Expected quit command from Q handler")
+	// Q now shows exit dialog instead of immediately quitting
+	appModel := model.(*AppState)
+	if !appModel.ShowingExit {
+		t.Error("Expected ShowingExit to be true after Q")
+	}
+
+	if cmd != nil {
+		t.Error("Expected nil command from Q handler (shows dialog instead)")
 	}
 }
 
@@ -232,13 +246,12 @@ func TestGoToNextScreen_AllScreens(t *testing.T) {
 	}{
 		{
 			FileTreeScreen,
-			TemplateScreen,
+			TemplateScreen, // Should advance when files are selected
 			func(a *AppState) {
-				// FileTree validation calls GetSelectedFiles() which returns empty
-				// So this test will fail validation
+				// Set selected files for validation to pass
 				a.SelectedFiles = []string{"/test/file1.txt"}
 			},
-			false, // Will fail because FileTree.GetSelectedFiles() returns empty
+			true, // Will pass because SelectedFiles is not empty
 		},
 		{
 			TemplateScreen,
@@ -289,9 +302,8 @@ func TestGoToNextScreen_AllScreens(t *testing.T) {
 					tt.current, appModel.CurrentScreen)
 			}
 
-			if appModel.Error == nil {
-				t.Errorf("Expected validation error for %v screen", tt.current)
-			}
+			// In the new implementation, validation failure doesn't set an error
+			// It just doesn't advance the screen
 		}
 	}
 }
@@ -306,8 +318,14 @@ func TestGoToNextScreen_FinalScreen(t *testing.T) {
 		t.Error("Expected non-nil model from final screen F3")
 	}
 
-	if cmd == nil {
-		t.Error("Expected quit command from final screen F3")
+	// Confirmation screen F3 doesn't actually quit, F10 is used for generation
+	if cmd != nil {
+		t.Error("Expected nil command from confirmation screen F3")
+	}
+	
+	appModel := model.(*AppState)
+	if appModel.CurrentScreen != ConfirmScreen {
+		t.Errorf("Expected to remain on ConfirmScreen, got %v", appModel.CurrentScreen)
 	}
 }
 
@@ -356,4 +374,133 @@ func TestGetHelpContent_UnknownScreen(t *testing.T) {
 	if helpContent != expected {
 		t.Errorf("Expected '%s' for unknown screen, got '%s'", expected, helpContent)
 	}
+}
+
+// Helper function for string containment check
+func TestGlobalKeyHandler_F4Skip(t *testing.T) {
+	app := NewApp()
+
+	// Blur text areas to ensure not in input mode during tests
+	app.TaskInput.Blur()
+	app.RulesInput.Blur()
+
+	tests := []struct {
+		screen   ScreenType
+		expected ScreenType
+		desc     string
+	}{
+		{TaskScreen, RulesScreen, "F4 from Task screen should skip to Rules"},
+		{RulesScreen, ConfirmScreen, "F4 from Rules screen should skip to Confirmation"},
+		{FileTreeScreen, FileTreeScreen, "F4 from FileTree should do nothing"},
+		{TemplateScreen, TemplateScreen, "F4 from Template should do nothing"},
+		{ConfirmScreen, ConfirmScreen, "F4 from Confirm should do nothing"},
+	}
+
+	for _, tt := range tests {
+		app.SetCurrentScreen(tt.screen)
+		msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("f4")}
+		
+		model, _ := app.GlobalKeyHandler(msg)
+		
+		if model == nil {
+			t.Errorf("%s: Expected non-nil model from F4 handler", tt.desc)
+			continue
+		}
+		
+		appModel := model.(*AppState)
+		if appModel.CurrentScreen != tt.expected {
+			t.Errorf("%s: Expected screen %v, got %v", tt.desc, tt.expected, appModel.CurrentScreen)
+		}
+	}
+}
+
+func TestGlobalKeyHandler_F10Generate(t *testing.T) {
+	app := NewApp()
+
+	// Test F10 from confirmation screen with all requirements
+	app.SetCurrentScreen(ConfirmScreen)
+	app.SelectedFiles = []string{"/test/file.txt"}
+	app.SelectedTemplate = &models.Template{Name: "Test Template"}
+	app.TaskContent = "Test task"
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("f10")}
+
+	model, cmd := app.GlobalKeyHandler(msg)
+
+	if model == nil {
+		t.Error("Expected non-nil model from F10 handler")
+	}
+	
+	// F10 should trigger generation and move to GenerateScreen
+	if cmd == nil {
+		t.Error("Expected command from F10 handler when all validation passes")
+	}
+}
+
+func TestGlobalKeyHandler_F10ValidationFailure(t *testing.T) {
+	app := NewApp()
+
+	// Test F10 from confirmation screen without requirements
+	app.SetCurrentScreen(ConfirmScreen)
+	// No selected files, template, or task
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("f10")}
+
+	model, cmd := app.GlobalKeyHandler(msg)
+
+	if model == nil {
+		t.Error("Expected non-nil model from F10 handler")
+	}
+
+	appModel := model.(*AppState)
+	
+	// F10 should not trigger generation without requirements
+	if cmd != nil {
+		t.Error("Expected nil command from F10 when validation fails")
+	}
+	
+	// Should remain on confirmation screen
+	if appModel.CurrentScreen != ConfirmScreen {
+		t.Errorf("Expected to remain on ConfirmScreen, got %v", appModel.CurrentScreen)
+	}
+}
+
+func TestGlobalKeyHandler_F10WrongScreen(t *testing.T) {
+	app := NewApp()
+
+	// Blur text areas to ensure not in input mode during tests
+	app.TaskInput.Blur()
+	app.RulesInput.Blur()
+
+	// Test F10 from non-confirmation screens
+	screens := []ScreenType{FileTreeScreen, TemplateScreen, TaskScreen, RulesScreen}
+
+	for _, screen := range screens {
+		app.SetCurrentScreen(screen)
+		app.SelectedFiles = []string{"/test/file.txt"}
+		app.SelectedTemplate = &models.Template{Name: "Test"}
+		app.TaskContent = "Test"
+
+		msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("f10")}
+
+		model, cmd := app.GlobalKeyHandler(msg)
+
+		if model == nil {
+			t.Errorf("Expected non-nil model from F10 on %v screen", screen)
+			continue
+		}
+
+		if cmd != nil {
+			t.Errorf("Expected nil command from F10 on %v screen", screen)
+		}
+
+		appModel := model.(*AppState)
+		if appModel.CurrentScreen != screen {
+			t.Errorf("Expected to remain on %v screen, got %v", screen, appModel.CurrentScreen)
+		}
+	}
+}
+
+func containsString(s, substr string) bool {
+	return strings.Contains(s, substr)
 }

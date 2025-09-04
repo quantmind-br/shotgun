@@ -2,9 +2,12 @@ package app
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/shotgun-cli/internal/screens/filetree"
-	"github.com/user/shotgun-cli/internal/screens/input"
-	"github.com/user/shotgun-cli/internal/screens/template"
+	"github.com/diogopedro/shotgun/internal/core/builder"
+	"github.com/diogopedro/shotgun/internal/screens/confirm"
+	"github.com/diogopedro/shotgun/internal/screens/filetree"
+	"github.com/diogopedro/shotgun/internal/screens/generate"
+	"github.com/diogopedro/shotgun/internal/screens/input"
+	"github.com/diogopedro/shotgun/internal/screens/template"
 )
 
 // Init implements tea.Model interface
@@ -68,6 +71,9 @@ func (a *AppState) handleScreenInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case ConfirmScreen:
 		return a.handleConfirmationInput(msg)
 
+	case GenerateScreen:
+		return a.handleGenerationInput(msg)
+
 	default:
 		return a, nil
 	}
@@ -115,7 +121,7 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.TaskContent = a.TaskInput.GetContent()
 
 		// Handle task screen specific messages
-		switch msg := msg.(type) {
+		switch msg.(type) {
 		case input.TaskInputMsg:
 			// Advance to rules screen when task input is complete
 			a.SetCurrentScreen(RulesScreen)
@@ -134,7 +140,7 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.RulesContent = a.RulesInput.GetContent()
 
 		// Handle rules screen specific messages
-		switch msg := msg.(type) {
+		switch msg.(type) {
 		case input.RulesInputMsg:
 			// Advance to confirmation screen when rules input is complete
 			a.SetCurrentScreen(ConfirmScreen)
@@ -143,6 +149,21 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case input.SkipRulesMsg:
 			// Skip rules screen entirely and go to confirmation
 			a.SetCurrentScreen(ConfirmScreen)
+		}
+
+	case GenerateScreen:
+		updatedModel, cmd := a.Generation.Update(msg)
+		a.Generation = updatedModel
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		// Handle generation screen specific messages
+		switch msg.(type) {
+		case generate.NavigateBackMsg:
+			a.SetCurrentScreen(ConfirmScreen)
+		case generate.NavigateToFileTreeMsg:
+			a.SetCurrentScreen(FileTreeScreen)
 		}
 	}
 
@@ -178,25 +199,100 @@ func (a *AppState) handleRulesInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (a *AppState) handleConfirmationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "up", "k":
-		// Scroll up if supported
-	case "down", "j":
-		// Scroll down if supported
+	// Initialize confirmation screen with current data if needed
+	if !a.Confirmation.IsReady() {
+		a.Confirmation.SetData(
+			a.SelectedTemplate,
+			a.SelectedFiles,
+			a.TaskContent,
+			a.RulesContent,
+		)
+		
+		// Trigger size calculation and filename generation
+		return a, tea.Batch(
+			confirm.GenerateFilenameCmd(),
+			a.startSizeCalculation(),
+		)
 	}
-	return a, nil
+
+	// Handle confirmation screen updates
+	updatedModel, cmd := a.Confirmation.Update(msg)
+	a.Confirmation = updatedModel
+
+	// Handle navigation messages
+	switch msg.String() {
+	case "f2":
+		// Return to rules screen
+		a.SetCurrentScreen(RulesScreen)
+		return a, nil
+	case "f1":
+		// Return to file tree screen
+		a.SetCurrentScreen(FileTreeScreen)
+		return a, nil
+	case "f10":
+		// Confirm and proceed to generation
+		if !a.Confirmation.IsCalculating() && a.Confirmation.GetEstimatedSize() > 0 {
+			// TODO: Trigger prompt generation
+			return a, a.generatePrompt()
+		}
+	}
+
+	return a, cmd
+}
+
+func (a *AppState) handleGenerationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	updatedModel, cmd := a.Generation.Update(msg)
+	a.Generation = updatedModel
+	return a, cmd
+}
+
+// startSizeCalculation initiates size calculation for the confirmation screen
+func (a *AppState) startSizeCalculation() tea.Cmd {
+	if a.SelectedTemplate == nil {
+		return nil
+	}
+
+	// Create estimator (would need to be imported from builder package)
+	// For now, return a placeholder command
+	return func() tea.Msg {
+		return confirm.SizeCalculationStartMsg{}
+	}
+}
+
+// generatePrompt triggers the prompt generation process
+func (a *AppState) generatePrompt() tea.Cmd {
+	// Switch to generation screen
+	a.SetCurrentScreen(GenerateScreen)
+	
+	// Create generation configuration from app state
+	config := builder.GenerationConfig{
+		Template:      a.SelectedTemplate,
+		Variables:     make(map[string]string),
+		SelectedFiles: a.SelectedFiles,
+		TaskContent:   a.TaskContent,
+		RulesContent:  a.RulesContent,
+		OutputPath:    "", // Use current directory
+	}
+	
+	// Start generation process
+	return func() tea.Msg {
+		return generate.StartGenerationMsg{
+			Config: config,
+		}
+	}
 }
 
 // Dialog handlers
 
 func (a *AppState) handleHelpDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "f1", "q":
-		a.ShowingHelp = false
-		a.HelpContent = ""
-		return a, nil
-	}
-	return a, nil
+	// Update help component first
+	var cmd tea.Cmd
+	a.Help, cmd = a.Help.Update(msg)
+	
+	// Update our state based on help component
+	a.ShowingHelp = a.Help.IsVisible()
+	
+	return a, cmd
 }
 
 func (a *AppState) handleExitDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

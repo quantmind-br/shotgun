@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // SimpleConcurrentFileScanner is a simpler implementation using goroutines and channels

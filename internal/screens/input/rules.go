@@ -30,6 +30,9 @@ type RulesInputModel struct {
 	// Screen state
 	ready bool
 	err   error
+
+	// Key mappings
+	keyMap KeyMap
 }
 
 // NewRulesInputModel creates a new RulesInputModel with default configuration
@@ -60,6 +63,7 @@ func NewRulesInputModel() RulesInputModel {
 		height:    25,
 		ready:     false,
 		err:       nil,
+		keyMap:    DefaultKeyMap(),
 	}
 }
 
@@ -332,4 +336,14 @@ func (m *RulesInputModel) updateCounters() {
 			}
 		}
 	}
+}
+
+// Focused returns true if the textarea is currently focused for text input
+func (r RulesInputModel) Focused() bool {
+	return r.textarea.Focused()
+}
+
+// Blur removes focus from the textarea
+func (r *RulesInputModel) Blur() {
+	r.textarea.Blur()
 }

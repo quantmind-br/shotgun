@@ -2,33 +2,50 @@ package app
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/diogopedro/shotgun/internal/components/help"
 )
 
 // GlobalKeyHandler processes global navigation keys
 func (a *AppState) GlobalKeyHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Skip global keys during text editing except ESC
+	if a.isInInputMode() && msg.String() != "esc" {
+		return nil, nil
+	}
+
 	switch msg.String() {
 	case "f1":
 		return a.showHelp()
 	case "f2":
-		return a.goToPreviousScreen()
+		if a.canGoToPreviousScreen() {
+			return a.goToPreviousScreen()
+		}
 	case "f3":
-		return a.goToNextScreen()
+		if a.canGoToNextScreen() {
+			return a.goToNextScreen()
+		}
+	case "f4":
+		return a.handleF4Action()
+	case "f10":
+		return a.handleF10Generate()
 	case "esc":
 		return a.showExitDialog()
 	case "q", "ctrl+c":
-		// Allow quit shortcut
 		return a.showExitDialog()
 	default:
 		// Key not handled globally, let current screen handle it
 		return nil, nil
 	}
+	
+	// Return current state if navigation not allowed
+	return a, nil
 }
 
 // showHelp displays contextual help for the current screen
 func (a *AppState) showHelp() (tea.Model, tea.Cmd) {
-	// Set help dialog state
-	a.ShowingHelp = true
-	a.HelpContent = a.getHelpContent()
+	// Toggle help visibility
+	a.Help.SetVisible(!a.Help.IsVisible())
+	a.Help.SetCurrentScreen(help.ScreenType(a.CurrentScreen))
+	a.ShowingHelp = a.Help.IsVisible()
 	a.Error = nil // Clear any errors
 
 	return a, nil
@@ -59,8 +76,8 @@ func (a *AppState) goToPreviousScreen() (tea.Model, tea.Cmd) {
 
 // goToNextScreen navigates to the next screen with validation
 func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
-	// Validate current screen before advancing
-	if !a.canAdvance() {
+	// Use the new validation method
+	if !a.canGoToNextScreen() {
 		// Set error message for validation failure
 		a.Error = a.getValidationError()
 		return a, nil
@@ -80,8 +97,8 @@ func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
 	case RulesScreen:
 		a.SetCurrentScreen(ConfirmScreen)
 	case ConfirmScreen:
-		// At final screen, could trigger completion
-		return a, tea.Quit
+		// Use F10 for generation from confirmation screen
+		return a, nil
 	}
 
 	return a, nil
@@ -89,9 +106,9 @@ func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
 
 // showExitDialog shows exit confirmation dialog
 func (a *AppState) showExitDialog() (tea.Model, tea.Cmd) {
-	// For now, we'll implement a simple quit
-	// Later we can add a confirmation dialog
-	return a, tea.Quit
+	// Show exit confirmation dialog
+	a.ShowingExit = true
+	return a, nil
 }
 
 // getHelpContent returns contextual help content for current screen
@@ -195,11 +212,93 @@ Action:
 
 // IsGlobalKey checks if a key should be handled globally
 func IsGlobalKey(key string) bool {
-	globalKeys := []string{"f1", "f2", "f3", "esc", "q", "ctrl+c"}
+	globalKeys := []string{"f1", "f2", "f3", "f4", "f10", "esc", "q", "ctrl+c"}
 	for _, gk := range globalKeys {
 		if key == gk {
 			return true
 		}
 	}
 	return false
+}
+
+// isInInputMode checks if user is currently editing text
+func (a *AppState) isInInputMode() bool {
+	switch a.CurrentScreen {
+	case TaskScreen:
+		return a.TaskInput.Focused()
+	case RulesScreen:
+		return a.RulesInput.Focused()
+	default:
+		return false
+	}
+}
+
+// canGoToPreviousScreen validates if backward navigation is allowed
+func (a *AppState) canGoToPreviousScreen() bool {
+	switch a.CurrentScreen {
+	case FileTreeScreen:
+		return false // First screen
+	case TemplateScreen:
+		return true
+	case TaskScreen:
+		return true
+	case RulesScreen:
+		return true
+	case ConfirmScreen:
+		return true
+	case GenerateScreen:
+		return true
+	default:
+		return false
+	}
+}
+
+// canGoToNextScreen validates if forward navigation is allowed
+func (a *AppState) canGoToNextScreen() bool {
+	switch a.CurrentScreen {
+	case FileTreeScreen:
+		return len(a.SelectedFiles) > 0
+	case TemplateScreen:
+		return a.SelectedTemplate != nil
+	case TaskScreen:
+		return len(a.TaskContent) > 0
+	case RulesScreen:
+		return true // Rules are optional
+	case ConfirmScreen:
+		return false // Use F10 for generation
+	case GenerateScreen:
+		return false // Last screen
+	default:
+		return false
+	}
+}
+
+// handleF4Action provides skip functionality for input screens
+func (a *AppState) handleF4Action() (tea.Model, tea.Cmd) {
+	switch a.CurrentScreen {
+	case TaskScreen:
+		// Skip to rules input
+		a.SetCurrentScreen(RulesScreen)
+		return a, nil
+	case RulesScreen:
+		// Skip rules, go to confirmation
+		a.SetCurrentScreen(ConfirmScreen)
+		return a, nil
+	default:
+		return a, nil
+	}
+}
+
+// handleF10Generate triggers prompt generation from confirmation screen
+func (a *AppState) handleF10Generate() (tea.Model, tea.Cmd) {
+	if a.CurrentScreen == ConfirmScreen && a.canGenerate() {
+		cmd := a.generatePrompt()
+		return a, cmd
+	}
+	return a, nil
+}
+
+// canGenerate validates all required data is present for generation
+func (a *AppState) canGenerate() bool {
+	return len(a.SelectedFiles) > 0 && a.SelectedTemplate != nil && len(a.TaskContent) > 0
 }

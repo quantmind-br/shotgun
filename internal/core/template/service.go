@@ -7,7 +7,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // TemplateService interface defines the template loading service contract

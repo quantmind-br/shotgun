@@ -1,0 +1,3 @@
+Sample file content for testing
+Second line with some content
+Third line: special chars <>&"'

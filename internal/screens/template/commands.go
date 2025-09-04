@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/user/shotgun-cli/internal/core/template"
+	"github.com/diogopedro/shotgun/internal/core/template"
 )
 
 // LoadTemplatesCmd creates a command to load templates from the service

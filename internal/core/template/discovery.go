@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/user/shotgun-cli/internal/core/config"
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/core/config"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // DiscoveryService handles template discovery from various sources

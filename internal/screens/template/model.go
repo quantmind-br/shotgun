@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // Messages for template screen
@@ -40,6 +40,9 @@ type TemplateModel struct {
 
 	// Detail panel state
 	showDetails bool
+
+	// Key mappings
+	keyMap KeyMap
 }
 
 // NewTemplateModel creates a new template selection model
@@ -64,6 +67,7 @@ func NewTemplateModel() TemplateModel {
 		err:         nil,
 		ready:       false,
 		showDetails: true,
+		keyMap:      DefaultKeyMap(),
 	}
 }
 

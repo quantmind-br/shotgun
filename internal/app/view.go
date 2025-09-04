@@ -21,16 +21,20 @@ func (a *AppState) View() string {
 	}
 
 	// Render current screen content
-	content.WriteString(a.renderCurrentScreen())
+	screenContent := a.renderCurrentScreen()
+	content.WriteString(screenContent)
 
-	// Render help dialog if showing
-	if a.ShowingHelp {
-		return a.renderHelpDialog()
-	}
-
-	// Render exit dialog if showing
+	// Render exit dialog if showing (takes priority over help)
 	if a.ShowingExit {
 		return a.renderExitDialog()
+	}
+
+	// Render help overlay on top of current screen if showing
+	if a.Help.IsVisible() {
+		baseView := content.String()
+		helpOverlay := a.Help.View()
+		// Layer the help overlay on top of the base view
+		return baseView + helpOverlay
 	}
 
 	return content.String()
@@ -49,6 +53,8 @@ func (a *AppState) renderCurrentScreen() string {
 		return a.renderRulesScreen()
 	case ConfirmScreen:
 		return a.renderConfirmationScreen()
+	case GenerateScreen:
+		return a.Generation.View()
 	default:
 		return "Unknown screen"
 	}
@@ -69,26 +75,7 @@ func (a *AppState) renderRulesScreen() string {
 }
 
 func (a *AppState) renderConfirmationScreen() string {
-	var content strings.Builder
-
-	content.WriteString(a.styleScreenTitle("Review & Confirm"))
-	content.WriteString("\n\n")
-
-	// Build summary
-	summary := a.Confirmation.summary
-	if summary == "" {
-		a.buildConfirmationSummary()
-		summary = a.Confirmation.summary
-	}
-
-	content.WriteString(a.styleConfirmationBox(summary))
-	content.WriteString("\n\n")
-
-	content.WriteString(a.styleAction("Press F3 to generate your prompt"))
-	content.WriteString("\n")
-	content.WriteString(a.renderNavigationHelp())
-
-	return content.String()
+	return a.Confirmation.View()
 }
 
 // Dialog renderers

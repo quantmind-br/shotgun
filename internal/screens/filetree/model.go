@@ -8,8 +8,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/user/shotgun-cli/internal/core/scanner"
-	"github.com/user/shotgun-cli/internal/models"
+	"github.com/diogopedro/shotgun/internal/core/scanner"
+	"github.com/diogopedro/shotgun/internal/models"
 )
 
 // Message types for scanner integration
@@ -29,6 +29,7 @@ type FileTreeModel struct {
 	viewport viewport.Model
 	width    int
 	height   int
+	keyMap   KeyMap
 }
 
 // NewFileTreeModel creates a new FileTreeModel with defaults
@@ -43,6 +44,7 @@ func NewFileTreeModel() FileTreeModel {
 		viewport: vp,
 		width:    80,
 		height:   24,
+		keyMap:   DefaultKeyMap(),
 	}
 }
 
