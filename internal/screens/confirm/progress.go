@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/diogopedro/shotgun/internal/components/common"
+	"github.com/diogopedro/shotgun/internal/components/progress"
+	"github.com/diogopedro/shotgun/internal/components/spinner"
 )
 
 // ProgressState represents the current state of size calculation
@@ -43,14 +44,13 @@ type ProgressManager struct {
 
 // NewProgressManager creates a new progress manager
 func NewProgressManager() *ProgressManager {
-	// Initialize progress bar
-	p := progress.New(progress.WithDefaultGradient())
-	p.Width = 40
+	// Initialize our enhanced progress bar
+	p := progress.NewFileProgressModel(100) // Default to 100 files, will be updated
+	p.SetWidth(40)
 
 	// Initialize spinner for indeterminate states
-	s := spinner.New()
-	s.Spinner = spinner.Dot
-	
+	s := spinner.New(spinner.SpinnerDots)
+
 	return &ProgressManager{
 		progress: p,
 		spinner:  s,
@@ -66,17 +66,24 @@ func (pm *ProgressManager) StartProgress(total int) {
 		Percentage: 0.0,
 		Completed:  false,
 	}
+
+	// Update progress bar with total
+	pm.progress.SetFileCount(0, total)
 }
 
 // UpdateProgress updates the current progress state
 func (pm *ProgressManager) UpdateProgress(processed int, currentFile string) tea.Cmd {
 	pm.state.Processed = processed
 	pm.state.CurrentFile = currentFile
-	
+
 	if pm.state.Total > 0 {
 		pm.state.Percentage = float64(processed) / float64(pm.state.Total)
 	}
-	
+
+	// Update progress bar
+	pm.progress.SetFileCount(processed, pm.state.Total)
+	pm.progress.SetMessage(fmt.Sprintf("Processing: %s", currentFile))
+
 	return func() tea.Msg {
 		return ProgressMsg(pm.state)
 	}
@@ -86,7 +93,11 @@ func (pm *ProgressManager) UpdateProgress(processed int, currentFile string) tea
 func (pm *ProgressManager) CompleteProgress() tea.Cmd {
 	pm.state.Completed = true
 	pm.state.Percentage = 1.0
-	
+
+	// Complete progress bar
+	pm.progress.SetFileCount(pm.state.Total, pm.state.Total)
+	pm.progress.SetMessage("Calculation complete")
+
 	return func() tea.Msg {
 		return ProgressMsg(pm.state)
 	}
@@ -97,7 +108,7 @@ func (pm *ProgressManager) CancelProgress() tea.Cmd {
 	if pm.cancel != nil {
 		pm.cancel()
 	}
-	
+
 	return func() tea.Msg {
 		return CancellationMsg{}
 	}
@@ -113,25 +124,33 @@ func (pm *ProgressManager) GetContext() context.Context {
 
 // Update handles progress-related messages
 func (pm *ProgressManager) Update(msg tea.Msg) tea.Cmd {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case ProgressMsg:
 		pm.state = ProgressState(msg)
-		if progressModel, progressCmd := pm.progress.Update(msg); progressCmd != nil {
-			pm.progress = progressModel.(progress.Model)
-			return progressCmd
-		}
-		
+
 	case tea.KeyMsg:
 		// Handle cancellation during progress
 		if msg.String() == "esc" || msg.String() == "q" {
 			return pm.CancelProgress()
 		}
 	}
-	
+
+	// Update progress bar
+	if progressModel, progressCmd := pm.progress.Update(msg); progressCmd != nil {
+		pm.progress = progressModel
+		cmds = append(cmds, progressCmd)
+	}
+
 	// Update spinner for indeterminate progress
 	if spinnerModel, spinnerCmd := pm.spinner.Update(msg); spinnerCmd != nil {
 		pm.spinner = spinnerModel
-		return spinnerCmd
+		cmds = append(cmds, spinnerCmd)
+	}
+
+	if len(cmds) > 0 {
+		return tea.Batch(cmds...)
 	}
 	return nil
 }
@@ -140,24 +159,13 @@ func (pm *ProgressManager) Update(msg tea.Msg) tea.Cmd {
 func (pm *ProgressManager) View() string {
 	if pm.state.Total == 0 {
 		// Indeterminate progress with spinner
-		return fmt.Sprintf("%s Calculating sizes...", pm.spinner.View())
+		pm.spinner.SetMessage("Calculating sizes...")
+		pm.spinner.Start()
+		return pm.spinner.ViewWithCancel()
 	}
-	
-	// Determinate progress with progress bar
-	progressView := pm.progress.ViewAs(pm.state.Percentage)
-	
-	status := fmt.Sprintf("Processed %d of %d files (%.0f%%)", 
-		pm.state.Processed, pm.state.Total, pm.state.Percentage*100)
-	
-	if pm.state.CurrentFile != "" {
-		currentFileDisplay := pm.state.CurrentFile
-		if len(currentFileDisplay) > 50 {
-			currentFileDisplay = "..." + currentFileDisplay[len(currentFileDisplay)-47:]
-		}
-		status += fmt.Sprintf("\nCurrent: %s", currentFileDisplay)
-	}
-	
-	return fmt.Sprintf("%s\n%s", progressView, status)
+
+	// Determinate progress with our enhanced progress bar
+	return pm.progress.View()
 }
 
 // GetState returns the current progress state
@@ -177,12 +185,12 @@ func (pm *ProgressManager) GetPercentage() float64 {
 
 // SetWidth updates the progress bar width
 func (pm *ProgressManager) SetWidth(width int) {
-	pm.progress.Width = width
+	pm.progress.SetWidth(width)
 }
 
 // ProgressTickCmd returns a command that sends periodic progress updates
 func ProgressTickCmd() tea.Cmd {
-	return tea.Tick(time.Millisecond*100, func(time.Time) tea.Msg {
+	return tea.Tick(common.ProgressUpdateRate, func(time.Time) tea.Msg {
 		return struct{}{}
 	})
 }

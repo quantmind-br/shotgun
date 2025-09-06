@@ -11,36 +11,36 @@ import (
 // Styling for the generation screen
 var (
 	titleStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("#7D56F4")).
-		Padding(0, 1).
-		Bold(true)
+			Foreground(lipgloss.Color("#FAFAFA")).
+			Background(lipgloss.Color("#7D56F4")).
+			Padding(0, 1).
+			Bold(true)
 
 	successStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#04B575")).
-		Bold(true)
+			Foreground(lipgloss.Color("#04B575")).
+			Bold(true)
 
 	errorStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FF5F56")).
-		Bold(true)
+			Foreground(lipgloss.Color("#FF5F56")).
+			Bold(true)
 
 	infoStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#7D56F4"))
+			Foreground(lipgloss.Color("#7D56F4"))
 
 	warningStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFBD2E"))
+			Foreground(lipgloss.Color("#FFBD2E"))
 
 	boxStyle = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#874BFD")).
-		Padding(1, 2).
-		Width(60)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#874BFD")).
+			Padding(1, 2).
+			Width(60)
 
 	progressBoxStyle = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#874BFD")).
-		Padding(0, 1).
-		Width(50)
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("#874BFD")).
+				Padding(0, 1).
+				Width(50)
 )
 
 // View renders the generation screen
@@ -114,14 +114,14 @@ func (m GenerateModel) renderSuccessView() string {
 	if m.outputFile != "" {
 		fileName := filepath.Base(m.outputFile)
 		content.WriteString(fmt.Sprintf("File: %s\n", infoStyle.Render(fileName)))
-		
+
 		// Show truncated path if it's long
 		dir := filepath.Dir(m.outputFile)
 		if len(dir) > 40 {
 			dir = "..." + dir[len(dir)-37:]
 		}
 		content.WriteString(fmt.Sprintf("Path: %s\n", infoStyle.Render(dir)))
-		
+
 		if m.generatedSize > 0 {
 			content.WriteString(fmt.Sprintf("Size: %s", infoStyle.Render(formatBytes(m.generatedSize))))
 			if m.totalSize > 0 && m.totalSize != m.generatedSize {
@@ -215,12 +215,12 @@ func formatBytes(bytes int64) string {
 	if bytes < unit {
 		return fmt.Sprintf("%d B", bytes)
 	}
-	
+
 	div, exp := int64(unit), 0
 	for n := bytes / unit; n >= unit; n /= unit {
 		div *= unit
 		exp++
 	}
-	
+
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

@@ -322,7 +322,7 @@ func TestGoToNextScreen_FinalScreen(t *testing.T) {
 	if cmd != nil {
 		t.Error("Expected nil command from confirmation screen F3")
 	}
-	
+
 	appModel := model.(*AppState)
 	if appModel.CurrentScreen != ConfirmScreen {
 		t.Errorf("Expected to remain on ConfirmScreen, got %v", appModel.CurrentScreen)
@@ -399,14 +399,14 @@ func TestGlobalKeyHandler_F4Skip(t *testing.T) {
 	for _, tt := range tests {
 		app.SetCurrentScreen(tt.screen)
 		msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("f4")}
-		
+
 		model, _ := app.GlobalKeyHandler(msg)
-		
+
 		if model == nil {
 			t.Errorf("%s: Expected non-nil model from F4 handler", tt.desc)
 			continue
 		}
-		
+
 		appModel := model.(*AppState)
 		if appModel.CurrentScreen != tt.expected {
 			t.Errorf("%s: Expected screen %v, got %v", tt.desc, tt.expected, appModel.CurrentScreen)
@@ -430,7 +430,7 @@ func TestGlobalKeyHandler_F10Generate(t *testing.T) {
 	if model == nil {
 		t.Error("Expected non-nil model from F10 handler")
 	}
-	
+
 	// F10 should trigger generation and move to GenerateScreen
 	if cmd == nil {
 		t.Error("Expected command from F10 handler when all validation passes")
@@ -453,12 +453,12 @@ func TestGlobalKeyHandler_F10ValidationFailure(t *testing.T) {
 	}
 
 	appModel := model.(*AppState)
-	
+
 	// F10 should not trigger generation without requirements
 	if cmd != nil {
 		t.Error("Expected nil command from F10 when validation fails")
 	}
-	
+
 	// Should remain on confirmation screen
 	if appModel.CurrentScreen != ConfirmScreen {
 		t.Errorf("Expected to remain on ConfirmScreen, got %v", appModel.CurrentScreen)

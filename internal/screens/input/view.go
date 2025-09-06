@@ -78,15 +78,15 @@ func (m TaskInputModel) renderMain() string {
 	// Text area with proper styling based on focus
 	textareaContent := m.textarea.View()
 	if m.textarea.Focused() {
-		textareaContent = focusedTextareaStyle.Width(m.width-4).Render(textareaContent)
+		textareaContent = focusedTextareaStyle.Width(m.width - 4).Render(textareaContent)
 	} else {
-		textareaContent = textareaStyle.Width(m.width-4).Render(textareaContent)
+		textareaContent = textareaStyle.Width(m.width - 4).Render(textareaContent)
 	}
 	sections = append(sections, textareaContent)
 
 	// Character and line counts
 	countText := fmt.Sprintf("Lines: %d | Characters: %d", m.lineCount, m.charCount)
-	countDisplay := countStyle.Width(m.width-4).Render(countText)
+	countDisplay := countStyle.Width(m.width - 4).Render(countText)
 	sections = append(sections, countDisplay)
 
 	// Help text for keyboard shortcuts
@@ -96,7 +96,7 @@ func (m TaskInputModel) renderMain() string {
 		"Ctrl+C: Copy selected text",
 		"Ctrl+V: Paste from clipboard",
 	}
-	help := helpStyle.Width(m.width-4).Render(strings.Join(helpText, " • "))
+	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -112,7 +112,7 @@ func (m TaskInputModel) renderError() string {
 
 	// Error message
 	errorMsg := fmt.Sprintf("Error: %s", m.err.Error())
-	errorDisplay := errorStyle.Width(m.width-4).Render(errorMsg)
+	errorDisplay := errorStyle.Width(m.width - 4).Render(errorMsg)
 	sections = append(sections, errorDisplay)
 
 	// Instructions
@@ -127,13 +127,13 @@ func (m TaskInputModel) renderError() string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("196")). // Red border for error state
 		Padding(1).
-		Width(m.width-4).
+		Width(m.width - 4).
 		Render(textareaContent)
 	sections = append(sections, textareaContent)
 
 	// Character and line counts
 	countText := fmt.Sprintf("Lines: %d | Characters: %d", m.lineCount, m.charCount)
-	countDisplay := countStyle.Width(m.width-4).Render(countText)
+	countDisplay := countStyle.Width(m.width - 4).Render(countText)
 	sections = append(sections, countDisplay)
 
 	// Help text
@@ -143,7 +143,7 @@ func (m TaskInputModel) renderError() string {
 		"Ctrl+C: Copy selected text",
 		"Ctrl+V: Paste from clipboard",
 	}
-	help := helpStyle.Width(m.width-4).Render(strings.Join(helpText, " • "))
+	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)

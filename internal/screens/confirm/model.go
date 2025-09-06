@@ -1,10 +1,10 @@
 package confirm
 
 import (
-	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/diogopedro/shotgun/internal/components/progress"
 	"github.com/diogopedro/shotgun/internal/models"
 )
 
@@ -30,6 +30,7 @@ type ConfirmModel struct {
 	estimatedSize int64
 	calculating   bool
 	progress      progress.Model
+	progressMgr   *ProgressManager
 	sizeBreakdown SizeBreakdown
 
 	// Output configuration
@@ -60,9 +61,9 @@ type SizeBreakdown struct {
 
 // NewConfirmModel creates a new confirmation screen model
 func NewConfirmModel() ConfirmModel {
-	// Initialize progress bar
-	p := progress.New(progress.WithDefaultGradient())
-	p.Width = 40
+	// Initialize our enhanced progress bar
+	p := progress.NewFileProgressModel(100) // Default to 100 files, will be updated
+	p.SetWidth(40)
 
 	// Initialize viewport for scrollable content
 	vp := viewport.New(78, 20)
@@ -71,10 +72,11 @@ func NewConfirmModel() ConfirmModel {
 		BorderForeground(lipgloss.Color("62"))
 
 	return ConfirmModel{
-		progress: p,
-		viewport: vp,
-		ready:    false,
-		keyMap:   DefaultKeyMap(),
+		progress:    p,
+		progressMgr: NewProgressManager(),
+		viewport:    vp,
+		ready:       false,
+		keyMap:      DefaultKeyMap(),
 	}
 }
 
@@ -84,9 +86,9 @@ func (m *ConfirmModel) UpdateWindowSize(width, height int) {
 	m.height = height
 
 	// Update viewport size with padding for borders and headers
-	viewportWidth := width - 4  // Account for borders
+	viewportWidth := width - 4    // Account for borders
 	viewportHeight := height - 12 // Account for borders, headers, and navigation
-	
+
 	if viewportWidth < 40 {
 		viewportWidth = 40
 	}
@@ -102,7 +104,12 @@ func (m *ConfirmModel) UpdateWindowSize(width, height int) {
 	if progressWidth < 20 {
 		progressWidth = 20
 	}
-	m.progress.Width = progressWidth
+	m.progress.SetWidth(progressWidth)
+
+	// Update progress manager width too
+	if m.progressMgr != nil {
+		m.progressMgr.SetWidth(progressWidth)
+	}
 }
 
 // SetData populates the model with data from AppState
@@ -138,7 +145,7 @@ func (m *ConfirmModel) SetEstimatedSize(size int64, breakdown SizeBreakdown) {
 func (m *ConfirmModel) updateWarningLevel() {
 	const (
 		largeSizeThreshold     = 100 * 1024  // 100KB
-		veryLargeSizeThreshold = 500 * 1024  // 500KB  
+		veryLargeSizeThreshold = 500 * 1024  // 500KB
 		excessiveSizeThreshold = 2048 * 1024 // 2MB
 	)
 

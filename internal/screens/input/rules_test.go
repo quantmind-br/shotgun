@@ -334,7 +334,7 @@ func containsSubstring(text, substr string) bool {
 	if len(text) < len(substr) {
 		return false
 	}
-	
+
 	for i := 0; i <= len(text)-len(substr); i++ {
 		if text[i:i+len(substr)] == substr {
 			return true

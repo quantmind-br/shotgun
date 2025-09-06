@@ -181,20 +181,20 @@ func (a *AppState) handleTemplateInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (a *AppState) handleTaskInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	updatedModel, cmd := a.TaskInput.Update(msg)
 	a.TaskInput = updatedModel
-	
+
 	// Update AppState.TaskContent with current textarea content
 	a.TaskContent = a.TaskInput.GetContent()
-	
+
 	return a, cmd
 }
 
 func (a *AppState) handleRulesInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	updatedModel, cmd := a.RulesInput.Update(msg)
 	a.RulesInput = updatedModel
-	
+
 	// Update AppState.RulesContent with current textarea content
 	a.RulesContent = a.RulesInput.GetContent()
-	
+
 	return a, cmd
 }
 
@@ -207,7 +207,7 @@ func (a *AppState) handleConfirmationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			a.TaskContent,
 			a.RulesContent,
 		)
-		
+
 		// Trigger size calculation and filename generation
 		return a, tea.Batch(
 			confirm.GenerateFilenameCmd(),
@@ -263,7 +263,7 @@ func (a *AppState) startSizeCalculation() tea.Cmd {
 func (a *AppState) generatePrompt() tea.Cmd {
 	// Switch to generation screen
 	a.SetCurrentScreen(GenerateScreen)
-	
+
 	// Create generation configuration from app state
 	config := builder.GenerationConfig{
 		Template:      a.SelectedTemplate,
@@ -273,7 +273,7 @@ func (a *AppState) generatePrompt() tea.Cmd {
 		RulesContent:  a.RulesContent,
 		OutputPath:    "", // Use current directory
 	}
-	
+
 	// Start generation process
 	return func() tea.Msg {
 		return generate.StartGenerationMsg{
@@ -288,10 +288,10 @@ func (a *AppState) handleHelpDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Update help component first
 	var cmd tea.Cmd
 	a.Help, cmd = a.Help.Update(msg)
-	
+
 	// Update our state based on help component
 	a.ShowingHelp = a.Help.IsVisible()
-	
+
 	return a, cmd
 }
 

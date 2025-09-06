@@ -37,11 +37,11 @@ func (fg *FilenameGenerator) GenerateFullPath(filename string) string {
 // CheckFileCollision checks if a file already exists and returns collision info
 func (fg *FilenameGenerator) CheckFileCollision(filename string) (bool, string) {
 	fullPath := fg.GenerateFullPath(filename)
-	
+
 	if _, err := os.Stat(fullPath); err == nil {
 		return true, fullPath
 	}
-	
+
 	return false, fullPath
 }
 
@@ -66,7 +66,7 @@ func (fg *FilenameGenerator) ValidateFilename(filename string) error {
 		"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
 		"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
 	}
-	
+
 	baseFilename := strings.ToUpper(strings.TrimSuffix(filename, filepath.Ext(filename)))
 	for _, reserved := range reservedNames {
 		if baseFilename == reserved {
@@ -95,27 +95,27 @@ func (fg *FilenameGenerator) EnsureOutputDirectory() error {
 func (fg *FilenameGenerator) GenerateUniqueFilename(baseFilename string) string {
 	filename := baseFilename
 	counter := 1
-	
+
 	for {
 		collision, _ := fg.CheckFileCollision(filename)
 		if !collision {
 			return filename
 		}
-		
+
 		// Extract extension and base name
 		ext := filepath.Ext(baseFilename)
 		baseName := strings.TrimSuffix(baseFilename, ext)
-		
+
 		// Append counter
 		filename = fmt.Sprintf("%s_%d%s", baseName, counter, ext)
 		counter++
-		
+
 		// Prevent infinite loop
 		if counter > 1000 {
 			break
 		}
 	}
-	
+
 	return filename
 }
 

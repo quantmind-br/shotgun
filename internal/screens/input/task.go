@@ -70,7 +70,7 @@ func (m *TaskInputModel) UpdateSize(width, height int) {
 
 	// Calculate textarea dimensions based on available space
 	// Leave room for counters, borders, and instructions
-	textareaWidth := width - 4  // Account for borders and padding
+	textareaWidth := width - 4   // Account for borders and padding
 	textareaHeight := height - 8 // Account for counters and instructions
 
 	if textareaWidth < 40 {

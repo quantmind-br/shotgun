@@ -71,7 +71,7 @@ func (e *SizeEstimator) EstimatePromptSize(ctx context.Context, config Estimatio
 	estimate.OverheadSize = e.calculateFormattingOverhead(config.SelectedFiles, fileContentSize)
 
 	// Calculate total size
-	estimate.TotalSize = estimate.TemplateSize + estimate.FileContentSize + 
+	estimate.TotalSize = estimate.TemplateSize + estimate.FileContentSize +
 		estimate.TreeStructSize + estimate.OverheadSize
 
 	// Set warning level
@@ -83,7 +83,7 @@ func (e *SizeEstimator) EstimatePromptSize(ctx context.Context, config Estimatio
 // CalculateProgressively calculates size with progress callbacks
 func (e *SizeEstimator) CalculateProgressively(ctx context.Context, files []string, callback ProgressCallback) (int64, error) {
 	var totalSize int64
-	
+
 	for i, filePath := range files {
 		select {
 		case <-ctx.Done():
@@ -121,7 +121,7 @@ func (e *SizeEstimator) calculateTemplateSize(template *models.Template, variabl
 	if e.templateEngine == nil {
 		// Fallback estimation without template processing
 		baseSize := int64(len(template.Content))
-		
+
 		// Estimate variable expansion
 		for key, value := range variables {
 			placeholder := "{{." + key + "}}"
@@ -129,7 +129,7 @@ func (e *SizeEstimator) calculateTemplateSize(template *models.Template, variabl
 			expansionDiff := int64(len(value)) - int64(len(placeholder))
 			baseSize += occurrences * expansionDiff
 		}
-		
+
 		return baseSize, nil
 	}
 
@@ -175,14 +175,14 @@ func (e *SizeEstimator) calculateFileStructureSize(ctx context.Context, selected
 func (e *SizeEstimator) calculateTreeStructureOverhead(filePath string) int64 {
 	// Count directory levels for tree structure
 	levels := int64(strings.Count(filePath, string(filepath.Separator)))
-	
+
 	// Estimate tree characters: ├── └── │ plus spaces
 	// Each level adds approximately 4-8 characters
 	treeChars := levels * 6
-	
+
 	// Add file path length in tree display
 	pathDisplay := int64(len(filePath))
-	
+
 	return treeChars + pathDisplay
 }
 
@@ -194,10 +194,10 @@ func (e *SizeEstimator) calculateFormattingOverhead(selectedFiles []string, cont
 	for _, filePath := range selectedFiles {
 		// Opening tag: <file path="filepath">
 		openTag := int64(len(`<file path="`) + len(filePath) + len(`">`))
-		
+
 		// Closing tag: </file>
 		closeTag := int64(len(`</file>`))
-		
+
 		overhead += openTag + closeTag
 	}
 

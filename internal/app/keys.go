@@ -35,7 +35,7 @@ func (a *AppState) GlobalKeyHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Key not handled globally, let current screen handle it
 		return nil, nil
 	}
-	
+
 	// Return current state if navigation not allowed
 	return a, nil
 }

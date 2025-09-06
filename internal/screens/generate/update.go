@@ -3,7 +3,7 @@ package generate
 import (
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	
+
 	"github.com/diogopedro/shotgun/internal/core/builder"
 )
 
@@ -25,23 +25,23 @@ func (m GenerateModel) Update(msg tea.Msg) (GenerateModel, tea.Cmd) {
 			}
 			// Exit generation screen
 			return m, NavigateBackCmd()
-			
+
 		case "f1":
 			// Return to file tree screen for restart
 			return m, NavigateToFileTreeCmd()
-			
+
 		case "f2":
 			if m.completed && !m.HasError() && m.outputFile != "" {
 				// Open generated file in system default application
 				return m, OpenFileCmd(m.outputFile)
 			}
-			
+
 		case "f5":
 			if m.HasError() {
 				// Retry generation
 				return m, RetryGenerationCmd()
 			}
-			
+
 		case "s":
 			// Toggle statistics display
 			m.ToggleStats()

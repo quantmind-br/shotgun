@@ -63,7 +63,7 @@ func (h *HelpModel) SetCurrentScreen(screen ScreenType) {
 func (h *HelpModel) UpdateSize(width, height int) {
 	h.width = width
 	h.height = height
-	
+
 	// Set viewport size (leave space for borders and title)
 	h.viewport.Width = width - 4
 	h.viewport.Height = height - 8
@@ -78,7 +78,7 @@ func (h *HelpModel) updateContent() {
 // formatContent formats help items for display
 func (h HelpModel) formatContent() string {
 	var content string
-	
+
 	// Global shortcuts section
 	content += "Navigation:\n"
 	for _, item := range h.content {
@@ -86,10 +86,10 @@ func (h HelpModel) formatContent() string {
 			content += "  " + item.Key + "  " + item.Description + "\n"
 		}
 	}
-	
+
 	content += "\nGlobal:\n"
 	content += "  F1        Show/hide this help\n"
-	content += "  F2        Previous screen\n" 
+	content += "  F2        Previous screen\n"
 	content += "  F3        Next screen\n"
 	if h.currentScreen == TaskScreen || h.currentScreen == RulesScreen {
 		content += "  F4        Skip to next section\n"
@@ -98,9 +98,9 @@ func (h HelpModel) formatContent() string {
 		content += "  F10       Generate prompt\n"
 	}
 	content += "  ESC       Exit application\n"
-	
+
 	content += "\nPress F1 to close help"
-	
+
 	return content
 }
 
@@ -109,22 +109,22 @@ func (h HelpModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update implements tea.Model  
+// Update implements tea.Model
 func (h HelpModel) Update(msg tea.Msg) (HelpModel, tea.Cmd) {
 	var cmd tea.Cmd
-	
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if h.visible && msg.String() == "f1" {
 			h.visible = false
 			return h, nil
 		}
-		
+
 		// Pass viewport navigation to viewport
 		if h.visible {
 			h.viewport, cmd = h.viewport.Update(msg)
 		}
 	}
-	
+
 	return h, cmd
 }

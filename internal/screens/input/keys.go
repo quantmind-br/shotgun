@@ -4,11 +4,11 @@ import "github.com/charmbracelet/bubbles/key"
 
 // KeyMap defines key bindings for input screens (task and rules)
 type KeyMap struct {
-	Tab        key.Binding
-	ShiftTab   key.Binding
-	Submit     key.Binding
-	Help       key.Binding
-	Quit       key.Binding
+	Tab      key.Binding
+	ShiftTab key.Binding
+	Submit   key.Binding
+	Help     key.Binding
+	Quit     key.Binding
 }
 
 // DefaultKeyMap returns the default key mappings for input screens

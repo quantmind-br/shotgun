@@ -130,7 +130,7 @@ func TestHelpModel_formatContent(t *testing.T) {
 	// Test confirmation screen shows F10
 	model.SetCurrentScreen(ConfirmScreen)
 	content = model.formatContent()
-	
+
 	if !strings.Contains(content, "F10") {
 		t.Error("Expected help content for ConfirmScreen to mention F10 key")
 	}

@@ -26,12 +26,29 @@ func (m FileTreeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 
 	case ScanCompleteMsg:
+		m.StopScanning()
 		m.LoadFileTree(msg.Nodes)
+		m.filesFound = len(msg.Nodes)
 		return m, nil
 
 	case ScanErrorMsg:
-		// Handle scan error (could add error display to UI)
+		m.StopScanning()
+		m.scanError = msg.Error
 		return m, nil
+
+	case ScanProgressMsg:
+		m.filesFound = msg.FilesFound
+		m.currentDir = msg.CurrentDir
+		return m, nil
+	}
+
+	// Update spinner if scanning
+	if m.scanning {
+		var spinnerCmd tea.Cmd
+		m.spinner, spinnerCmd = m.spinner.Update(msg)
+		if spinnerCmd != nil {
+			cmd = tea.Batch(cmd, spinnerCmd)
+		}
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -40,6 +57,17 @@ func (m FileTreeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleKeyPress processes keyboard input
 func (m FileTreeModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Handle ESC during scanning
+	if m.scanning && msg.String() == "esc" {
+		m.StopScanning()
+		return m, nil
+	}
+
+	// Don't process other keys while scanning
+	if m.scanning {
+		return m, nil
+	}
+
 	switch msg.String() {
 	case "up", "k":
 		m.moveCursorUp()

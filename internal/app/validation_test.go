@@ -187,7 +187,7 @@ func TestValidateScreenData_Confirm(t *testing.T) {
 	app.SelectedFiles = []string{"/test/file.txt"}
 	app.SelectedTemplate = &models.Template{Name: "Test"}
 	app.TaskContent = "Test task"
-	
+
 	err = app.validateScreenData(ConfirmScreen)
 	if err != nil {
 		t.Errorf("Expected no error for ConfirmScreen with all data, got: %v", err)
@@ -264,7 +264,7 @@ func TestIsScreenComplete(t *testing.T) {
 
 	// Add required data
 	app.SelectedTemplate = &models.Template{Name: "Test"}
-	
+
 	// Test TemplateScreen - complete
 	if !app.isScreenComplete(TemplateScreen) {
 		t.Error("Expected TemplateScreen to be complete with template")
@@ -320,7 +320,7 @@ func TestCanGoToPreviousScreen(t *testing.T) {
 	for _, tt := range tests {
 		app.SetCurrentScreen(tt.screen)
 		result := app.canGoToPreviousScreen()
-		
+
 		if result != tt.expected {
 			t.Errorf("Screen %v: expected canGoToPreviousScreen=%v, got %v",
 				tt.screen, tt.expected, result)

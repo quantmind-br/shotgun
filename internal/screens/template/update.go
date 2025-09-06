@@ -22,8 +22,20 @@ func (m TemplateModel) Update(msg tea.Msg) (TemplateModel, tea.Cmd) {
 		// Handle template loading error
 		m.SetError(msg.Error)
 
+	case TemplateDiscoveryProgressMsg:
+		// Handle template discovery progress
+		m.foundCount = msg.Found
+		m.currentPath = msg.Path
+
 	case tea.KeyMsg:
-		// Don't handle keys if still loading
+		// Handle ESC during discovery
+		if m.discovering && msg.String() == "esc" {
+			m.StopDiscovery()
+			m.loading = false
+			return m, nil
+		}
+
+		// Don't handle other keys if still loading
 		if m.loading {
 			return m, nil
 		}
@@ -136,6 +148,15 @@ func (m TemplateModel) Update(msg tea.Msg) (TemplateModel, tea.Cmd) {
 		// Update list with other messages
 		m.list, cmd = m.list.Update(msg)
 		cmds = append(cmds, cmd)
+	}
+
+	// Update spinner if discovering
+	if m.discovering {
+		var spinnerCmd tea.Cmd
+		m.spinner, spinnerCmd = m.spinner.Update(msg)
+		if spinnerCmd != nil {
+			cmds = append(cmds, spinnerCmd)
+		}
 	}
 
 	return m, tea.Batch(cmds...)

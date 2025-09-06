@@ -7,7 +7,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	
+
+	"github.com/diogopedro/shotgun/internal/components/common"
 	"github.com/diogopedro/shotgun/internal/core/builder"
 )
 
@@ -15,12 +16,12 @@ import (
 func StartGenerationCmd(config builder.GenerationConfig) tea.Cmd {
 	return func() tea.Msg {
 		generator := builder.NewPromptGenerator()
-		
+
 		// Create progress callback that sends progress messages
 		progressCallback := func(stage string, progress float64) {
 			// This would ideally send progress updates, but we'll handle it in the async command
 		}
-		
+
 		return generator.GenerateAsync(config, progressCallback)
 	}
 }
@@ -38,7 +39,7 @@ func WritePromptToFileCmd(result *builder.GeneratedPrompt) tea.Cmd {
 
 		writer := builder.NewFileWriter()
 		outputFile, err := writer.WritePromptFile(result.Content, "")
-		
+
 		return FileWriteCompleteMsg{
 			Result:     result,
 			OutputFile: outputFile,
@@ -73,7 +74,7 @@ func NavigateToFileTreeCmd() tea.Cmd {
 func OpenFileCmd(filePath string) tea.Cmd {
 	return func() tea.Msg {
 		var cmd *exec.Cmd
-		
+
 		switch runtime.GOOS {
 		case "windows":
 			cmd = exec.Command("cmd", "/c", "start", "", filePath)
@@ -84,11 +85,11 @@ func OpenFileCmd(filePath string) tea.Cmd {
 		default:
 			return fmt.Errorf("unsupported operating system for opening files")
 		}
-		
+
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to open file: %w", err)
 		}
-		
+
 		return nil
 	}
 }
@@ -102,7 +103,7 @@ func RetryGenerationCmd() tea.Cmd {
 
 // ProgressTickCmd provides periodic progress updates during generation
 func ProgressTickCmd() tea.Cmd {
-	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+	return tea.Tick(common.ProgressUpdateRate, func(time.Time) tea.Msg {
 		return struct{}{} // Generic tick message for spinner updates
 	})
 }

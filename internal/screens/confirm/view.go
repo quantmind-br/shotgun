@@ -49,7 +49,7 @@ var (
 
 	// Warning level colors
 	normalColor    = lipgloss.Color("82")  // Green
-	largeColor     = lipgloss.Color("214") // Yellow  
+	largeColor     = lipgloss.Color("214") // Yellow
 	veryLargeColor = lipgloss.Color("208") // Orange
 	excessiveColor = lipgloss.Color("196") // Red
 )
@@ -102,7 +102,7 @@ func (m ConfirmModel) renderSelectionSummary() string {
 	content.WriteString("\n\n")
 
 	// Template information
-	templateInfo := fmt.Sprintf("Template: \"%s\" v%s", 
+	templateInfo := fmt.Sprintf("Template: \"%s\" v%s",
 		m.template.Name, m.template.Version)
 	if m.template.Description != "" {
 		templateInfo += fmt.Sprintf("\nDescription: %s", m.template.Description)
@@ -113,7 +113,7 @@ func (m ConfirmModel) renderSelectionSummary() string {
 	// File selection summary
 	totalSelected := len(m.selectedFiles)
 	filesSummary := fmt.Sprintf("Files: %d selected", totalSelected)
-	
+
 	// Add excluded file count if available (would need to be passed from AppState)
 	// For now, just show selected count
 	content.WriteString(filesSummary)
@@ -147,12 +147,12 @@ func (m ConfirmModel) renderSelectionSummary() string {
 		if len(m.selectedFiles) < maxFiles {
 			maxFiles = len(m.selectedFiles)
 		}
-		
+
 		for i := 0; i < maxFiles; i++ {
 			fileName := filepath.Base(m.selectedFiles[i])
 			content.WriteString(fmt.Sprintf("  • %s\n", fileName))
 		}
-		
+
 		if len(m.selectedFiles) > maxFiles {
 			content.WriteString(fmt.Sprintf("  ... and %d more files\n", len(m.selectedFiles)-maxFiles))
 		}
@@ -169,8 +169,17 @@ func (m ConfirmModel) renderSizeCalculation() string {
 	content.WriteString("\n\n")
 
 	content.WriteString("Calculating size estimation...\n\n")
-	content.WriteString(m.progress.View())
+
+	// Use progress manager view if available, fallback to progress bar
+	if m.progressMgr != nil {
+		content.WriteString(m.progressMgr.View())
+	} else {
+		content.WriteString(m.progress.View())
+	}
 	content.WriteString("\n")
+
+	content.WriteString("\n")
+	content.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("[Press ESC to cancel]"))
 
 	return sizeStyle.Render(content.String())
 }
@@ -229,7 +238,7 @@ func (m ConfirmModel) renderWarningSection() string {
 		warningText = "Very Large Output Warning"
 	}
 
-	content.WriteString(fmt.Sprintf("%s  %s", warningIcon, 
+	content.WriteString(fmt.Sprintf("%s  %s", warningIcon,
 		lipgloss.NewStyle().Bold(true).Render(warningText)))
 	content.WriteString("\n\n")
 
@@ -254,7 +263,7 @@ func (m ConfirmModel) renderWarningSection() string {
 func (m ConfirmModel) renderNavigationHelp() string {
 	help := []string{
 		"F10: Confirm and generate prompt",
-		"F2: Return to rules input", 
+		"F2: Return to rules input",
 		"F1: Return to file selection",
 		"Esc: Exit application",
 	}
@@ -272,13 +281,13 @@ func formatBytes(bytes int64) string {
 	if bytes < unit {
 		return fmt.Sprintf("%d B", bytes)
 	}
-	
+
 	div, exp := int64(unit), 0
 	for n := bytes / unit; n >= unit; n /= unit {
 		div *= unit
 		exp++
 	}
-	
+
 	units := []string{"KB", "MB", "GB"}
 	return fmt.Sprintf("%.1f %s", float64(bytes)/float64(div), units[exp])
 }

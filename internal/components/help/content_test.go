@@ -16,7 +16,7 @@ func TestHelpContentStructure(t *testing.T) {
 
 	for _, screen := range screens {
 		content := GetHelpContent(screen)
-		
+
 		if content == nil {
 			t.Errorf("Expected help content for screen %v to be defined", screen)
 			continue
@@ -25,7 +25,7 @@ func TestHelpContentStructure(t *testing.T) {
 		// Check that each screen has at least some help items
 		screenSpecificItems := 0
 		globalItems := 0
-		
+
 		for _, item := range content {
 			if item.Context == screen {
 				screenSpecificItems++
@@ -44,16 +44,16 @@ func TestHelpContentStructure(t *testing.T) {
 func TestHelpItemKeys(t *testing.T) {
 	// Test that help items have valid keys and descriptions
 	content := GetHelpContent(FileTreeScreen)
-	
+
 	for _, item := range content {
 		if item.Key == "" {
 			t.Error("Found help item with empty key")
 		}
-		
+
 		if item.Description == "" {
 			t.Error("Found help item with empty description")
 		}
-		
+
 		// Check that context is valid
 		if item.Context < -1 || item.Context > GenerateScreen {
 			t.Errorf("Invalid context %v for help item %s", item.Context, item.Key)
@@ -64,7 +64,7 @@ func TestHelpItemKeys(t *testing.T) {
 func TestGlobalHelpItems(t *testing.T) {
 	// Test that global items (context -1) are consistent across screens
 	globalKeys := make(map[string]string) // key -> description
-	
+
 	screens := []ScreenType{
 		FileTreeScreen,
 		TemplateScreen,
@@ -72,10 +72,10 @@ func TestGlobalHelpItems(t *testing.T) {
 		RulesScreen,
 		ConfirmScreen,
 	}
-	
+
 	for _, screen := range screens {
 		content := GetHelpContent(screen)
-		
+
 		for _, item := range content {
 			if item.Context == -1 { // Global item
 				if desc, exists := globalKeys[item.Key]; exists {

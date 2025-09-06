@@ -36,13 +36,13 @@ func (h HelpModel) View() string {
 
 	// Create title based on current screen
 	title := "Help - " + h.getScreenName()
-	
+
 	// Create the help content with proper styling
 	content := h.viewport.View()
-	
+
 	// Style the content
 	styledContent := helpContentStyle.Render(content)
-	
+
 	// Create the complete help overlay
 	helpBox := lipgloss.JoinVertical(
 		lipgloss.Center,
@@ -50,13 +50,13 @@ func (h HelpModel) View() string {
 		"",
 		styledContent,
 	)
-	
+
 	// Apply the overlay styling
 	overlay := helpOverlayStyle.
 		Width(min(h.width-8, 60)).
 		Height(min(h.height-6, 20)).
 		Render(helpBox)
-	
+
 	// Center the overlay on screen
 	return lipgloss.Place(
 		h.width,

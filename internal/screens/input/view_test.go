@@ -10,7 +10,7 @@ import (
 func TestTaskInputModel_ViewBasic(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	view := model.View()
 
 	if view == "" {
@@ -39,7 +39,7 @@ func TestTaskInputModel_ViewWithContent(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
 	model.SetContent("This is a test task description with some content")
-	
+
 	view := model.View()
 
 	// Check that counters are updated
@@ -57,7 +57,7 @@ func TestTaskInputModel_ViewWithMultilineContent(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
 	model.SetContent("Line 1\nLine 2\nLine 3")
-	
+
 	view := model.View()
 
 	// Check that line count is correct
@@ -76,7 +76,7 @@ func TestTaskInputModel_ViewWithError(t *testing.T) {
 	model.UpdateSize(80, 25)
 	testError := errors.New("validation error")
 	model.SetError(testError)
-	
+
 	view := model.View()
 
 	// Should render error state
@@ -92,7 +92,7 @@ func TestTaskInputModel_ViewWithError(t *testing.T) {
 func TestTaskInputModel_ViewSmallWindow(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(0, 0)
-	
+
 	view := model.View()
 
 	if view != "Loading..." {
@@ -103,7 +103,7 @@ func TestTaskInputModel_ViewSmallWindow(t *testing.T) {
 func TestTaskInputModel_ViewKeyboardShortcuts(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	view := model.View()
 
 	shortcuts := []string{
@@ -125,12 +125,12 @@ func TestTaskInputModel_ViewUTF8Content(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
 	model.SetContent("Hello 世界 🌍 café")
-	
+
 	view := model.View()
 
 	// Should show correct character count for UTF-8
 	expectedCharCount := len([]rune("Hello 世界 🌍 café"))
-	
+
 	// Check if character counting works correctly
 	if !strings.Contains(view, "Characters:") {
 		t.Error("expected view to contain character count")
@@ -146,14 +146,14 @@ func TestTaskInputModel_ViewUTF8Content(t *testing.T) {
 func TestTaskInputModel_ViewConsistentLayout(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test with empty content
 	viewEmpty := model.View()
-	
+
 	// Test with content
 	model.SetContent("Some content")
 	viewWithContent := model.View()
-	
+
 	// Both should have the same basic structure
 	checkStructure := func(view, label string) {
 		if !strings.Contains(view, "📝 Task Description") {
@@ -169,14 +169,14 @@ func TestTaskInputModel_ViewConsistentLayout(t *testing.T) {
 			t.Errorf("%s: expected keyboard shortcuts", label)
 		}
 	}
-	
+
 	checkStructure(viewEmpty, "Empty view")
 	checkStructure(viewWithContent, "Content view")
 }
 
 func TestTaskInputModel_ViewResponsiveSize(t *testing.T) {
 	model := NewTaskInputModel()
-	
+
 	// Test different window sizes
 	sizes := []struct {
 		width, height int
@@ -186,16 +186,16 @@ func TestTaskInputModel_ViewResponsiveSize(t *testing.T) {
 		{80, 25, "medium"},
 		{120, 40, "large"},
 	}
-	
+
 	for _, size := range sizes {
 		t.Run(size.name, func(t *testing.T) {
 			model.UpdateSize(size.width, size.height)
 			view := model.View()
-			
+
 			if view == "" {
 				t.Errorf("expected non-empty view for %s window", size.name)
 			}
-			
+
 			if view == "Loading..." {
 				t.Errorf("unexpected loading state for %s window (%dx%d)", size.name, size.width, size.height)
 			}
@@ -206,31 +206,31 @@ func TestTaskInputModel_ViewResponsiveSize(t *testing.T) {
 func TestTaskInputModel_ViewErrorState(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test with different error types
 	testErrors := []error{
 		errors.New("empty content"),
 		errors.New("content too short"),
 		errors.New("clipboard error"),
 	}
-	
+
 	for _, testErr := range testErrors {
 		model.SetError(testErr)
 		view := model.View()
-		
+
 		if !strings.Contains(view, "Error:") {
 			t.Errorf("expected error view to contain 'Error:', got %v", view)
 		}
-		
+
 		if !strings.Contains(view, testErr.Error()) {
 			t.Errorf("expected error view to contain error message %q", testErr.Error())
 		}
 	}
-	
+
 	// Test clearing error
 	model.SetError(nil)
 	view := model.View()
-	
+
 	if strings.Contains(view, "Error:") {
 		t.Error("expected error to be cleared from view")
 	}
@@ -239,7 +239,7 @@ func TestTaskInputModel_ViewErrorState(t *testing.T) {
 func TestTaskInputModel_ViewInstructions(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	view := model.View()
 
 	// Check for instructional text
@@ -260,14 +260,14 @@ func TestTaskInputModel_ViewInstructions(t *testing.T) {
 func TestTaskInputModel_ViewTextareaFocus(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test focused vs unfocused textarea styling
 	model.textarea.Focus()
 	focusedView := model.View()
-	
+
 	model.textarea.Blur()
 	blurredView := model.View()
-	
+
 	// Both views should render without error
 	if focusedView == "" {
 		t.Error("expected focused view to render")
@@ -275,7 +275,7 @@ func TestTaskInputModel_ViewTextareaFocus(t *testing.T) {
 	if blurredView == "" {
 		t.Error("expected blurred view to render")
 	}
-	
+
 	// Views should be different when focus changes
 	// (We can't test exact styling differences easily, but we can ensure both render)
 }
@@ -283,18 +283,18 @@ func TestTaskInputModel_ViewTextareaFocus(t *testing.T) {
 func TestTaskInputModel_ViewLargeContent(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test with content that might affect layout
 	largeContent := strings.Repeat("This is a long line that might cause wrapping issues. ", 50)
 	model.SetContent(largeContent)
-	
+
 	view := model.View()
-	
+
 	// Should handle large content gracefully
 	if view == "" {
 		t.Error("expected view to render with large content")
 	}
-	
+
 	// Character count should be displayed correctly
 	expectedCharCount := len([]rune(largeContent))
 	countText := fmt.Sprintf("Characters: %d", expectedCharCount)
@@ -306,18 +306,18 @@ func TestTaskInputModel_ViewLargeContent(t *testing.T) {
 func TestTaskInputModel_ViewManyLines(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test with many lines
 	manyLines := strings.Repeat("Line\n", 50)
 	model.SetContent(manyLines)
-	
+
 	view := model.View()
-	
+
 	// Should handle many lines gracefully
 	if view == "" {
 		t.Error("expected view to render with many lines")
 	}
-	
+
 	// Line count should be displayed correctly
 	expectedLineCount := 51 // 50 lines + 1 empty line at end
 	countText := fmt.Sprintf("Lines: %d", expectedLineCount)
@@ -329,13 +329,13 @@ func TestTaskInputModel_ViewManyLines(t *testing.T) {
 func TestTaskInputModel_ViewSpecialCharacters(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test with special characters that might affect rendering
 	specialContent := "Special chars: \t\n\r\"'`<>&"
 	model.SetContent(specialContent)
-	
+
 	view := model.View()
-	
+
 	// Should render without crashing
 	if view == "" {
 		t.Error("expected view to render with special characters")
@@ -345,7 +345,7 @@ func TestTaskInputModel_ViewSpecialCharacters(t *testing.T) {
 func TestTaskInputModel_ViewErrorStateEdgeCases(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test error view with various error conditions
 	testErrors := []error{
 		errors.New(""),
@@ -354,22 +354,22 @@ func TestTaskInputModel_ViewErrorStateEdgeCases(t *testing.T) {
 		errors.New("error with UTF-8: éñ🌍"),
 		errors.New("error\nwith\nnewlines"),
 	}
-	
+
 	for i, err := range testErrors {
 		t.Run(fmt.Sprintf("error_%d", i), func(t *testing.T) {
 			model.SetError(err)
 			view := model.View()
-			
+
 			// Should render error view
 			if view == "" {
 				t.Error("expected error view to render")
 			}
-			
+
 			// Should contain error text
 			if !strings.Contains(view, "Error:") {
 				t.Error("expected error view to contain 'Error:'")
 			}
-			
+
 			// Should contain the error message (unless it's empty)
 			// Note: Long error messages may be truncated or wrapped, so we check for partial content
 			if err.Error() != "" {
@@ -392,7 +392,7 @@ func TestTaskInputModel_ViewErrorStateEdgeCases(t *testing.T) {
 
 func TestTaskInputModel_ViewDimensionHandling(t *testing.T) {
 	model := NewTaskInputModel()
-	
+
 	// Test various dimensions that might affect rendering
 	testCases := []struct {
 		width, height int
@@ -405,12 +405,12 @@ func TestTaskInputModel_ViewDimensionHandling(t *testing.T) {
 		{40, 15, "small but valid dimensions", false},
 		{200, 100, "large dimensions", false},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			model.UpdateSize(tc.width, tc.height)
 			view := model.View()
-			
+
 			if tc.expectLoading {
 				if view != "Loading..." {
 					t.Errorf("expected 'Loading...' for %s, got %q", tc.description, view)
@@ -430,19 +430,19 @@ func TestTaskInputModel_ViewDimensionHandling(t *testing.T) {
 func TestTaskInputModel_ViewContentAndErrorInteraction(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test switching between error and normal states
 	model.SetContent("Some content")
 	normalView := model.View()
-	
+
 	// Switch to error state
 	model.SetError(errors.New("test error"))
 	errorView := model.View()
-	
+
 	// Clear error state
 	model.SetError(nil)
 	clearedView := model.View()
-	
+
 	// All views should render
 	if normalView == "" {
 		t.Error("expected normal view to render")
@@ -453,12 +453,12 @@ func TestTaskInputModel_ViewContentAndErrorInteraction(t *testing.T) {
 	if clearedView == "" {
 		t.Error("expected cleared view to render")
 	}
-	
+
 	// Error view should contain error text
 	if !strings.Contains(errorView, "Error:") {
 		t.Error("expected error view to contain 'Error:'")
 	}
-	
+
 	// Normal and cleared views should not contain error text
 	if strings.Contains(normalView, "Error:") {
 		t.Error("expected normal view to not contain 'Error:'")
@@ -471,27 +471,27 @@ func TestTaskInputModel_ViewContentAndErrorInteraction(t *testing.T) {
 func TestTaskInputModel_ViewCounterAccuracy(t *testing.T) {
 	model := NewTaskInputModel()
 	model.UpdateSize(80, 25)
-	
+
 	// Test that counters in view match internal counters
 	testContent := "Hello\nWorld\nwith UTF-8: éñ🌍"
 	model.SetContent(testContent)
-	
+
 	view := model.View()
-	
+
 	// Check line count display
 	expectedLineCount := 3
 	lineCountText := fmt.Sprintf("Lines: %d", expectedLineCount)
 	if !strings.Contains(view, lineCountText) {
 		t.Errorf("expected view to contain %q", lineCountText)
 	}
-	
+
 	// Check character count display
 	expectedCharCount := len([]rune(testContent))
 	charCountText := fmt.Sprintf("Characters: %d", expectedCharCount)
 	if !strings.Contains(view, charCountText) {
 		t.Errorf("expected view to contain %q", charCountText)
 	}
-	
+
 	// Verify internal counters match
 	if model.charCount != expectedCharCount {
 		t.Errorf("internal character count mismatch: expected %d, got %d", expectedCharCount, model.charCount)

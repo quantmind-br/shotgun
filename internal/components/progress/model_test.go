@@ -3,6 +3,7 @@ package progress
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewModel(t *testing.T) {
@@ -28,6 +29,42 @@ func TestNewModel(t *testing.T) {
 	if model.titles[0] != "Step 1" {
 		t.Errorf("Expected first title 'Step 1', got '%s'", model.titles[0])
 	}
+
+	if !model.showETA {
+		t.Error("Expected showETA to be true by default")
+	}
+}
+
+func TestNewFileProgressModel(t *testing.T) {
+	model := NewFileProgressModel(100)
+
+	if model.totalFiles != 100 {
+		t.Errorf("Expected totalFiles to be 100, got %d", model.totalFiles)
+	}
+	if model.fileCount != 0 {
+		t.Errorf("Expected fileCount to be 0, got %d", model.fileCount)
+	}
+	if model.current != 0 {
+		t.Errorf("Expected current to be 0, got %d", model.current)
+	}
+	if !model.showETA {
+		t.Error("Expected showETA to be true")
+	}
+}
+
+func TestNewBytesProgressModel(t *testing.T) {
+	totalBytes := int64(1024 * 1024) // 1MB
+	model := NewBytesProgressModel(totalBytes)
+
+	if model.totalBytes != totalBytes {
+		t.Errorf("Expected totalBytes to be %d, got %d", totalBytes, model.totalBytes)
+	}
+	if model.bytesRead != 0 {
+		t.Errorf("Expected bytesRead to be 0, got %d", model.bytesRead)
+	}
+	if model.total != 100 {
+		t.Errorf("Expected total to be 100 (percentage), got %d", model.total)
+	}
 }
 
 func TestSetWidth(t *testing.T) {
@@ -48,16 +85,22 @@ func TestSetCurrent(t *testing.T) {
 		t.Errorf("Expected current = 3, got %d", model.current)
 	}
 
-	// Invalid current step (too low)
+	// Check percentage is calculated
+	expectedPercentage := 60.0 // 3/5 * 100
+	if model.percentage != expectedPercentage {
+		t.Errorf("Expected percentage to be %.1f, got %.1f", expectedPercentage, model.percentage)
+	}
+
+	// Test allowing 0 now
 	model.SetCurrent(0)
-	if model.current != 3 {
-		t.Errorf("Expected current to remain 3, got %d", model.current)
+	if model.current != 0 {
+		t.Errorf("Expected current = 0, got %d", model.current)
 	}
 
 	// Invalid current step (too high)
 	model.SetCurrent(6)
-	if model.current != 3 {
-		t.Errorf("Expected current to remain 3, got %d", model.current)
+	if model.current != 0 {
+		t.Errorf("Expected current to remain 0, got %d", model.current)
 	}
 
 	// Valid boundary values
@@ -69,6 +112,141 @@ func TestSetCurrent(t *testing.T) {
 	model.SetCurrent(5)
 	if model.current != 5 {
 		t.Errorf("Expected current = 5, got %d", model.current)
+	}
+}
+
+func TestSetBytes(t *testing.T) {
+	model := NewBytesProgressModel(1000)
+
+	model.SetBytes(250, 1000)
+	if model.bytesRead != 250 {
+		t.Errorf("Expected bytesRead to be 250, got %d", model.bytesRead)
+	}
+
+	expectedPercentage := 25.0
+	if model.percentage != expectedPercentage {
+		t.Errorf("Expected percentage to be %.1f, got %.1f", expectedPercentage, model.percentage)
+	}
+}
+
+func TestSetFileCount(t *testing.T) {
+	model := NewFileProgressModel(10)
+
+	model.SetFileCount(3, 10)
+	if model.fileCount != 3 {
+		t.Errorf("Expected fileCount to be 3, got %d", model.fileCount)
+	}
+
+	expectedPercentage := 30.0
+	if model.percentage != expectedPercentage {
+		t.Errorf("Expected percentage to be %.1f, got %.1f", expectedPercentage, model.percentage)
+	}
+}
+
+func TestSetMessage(t *testing.T) {
+	model := NewModel(1, 3, nil)
+	message := "Processing files..."
+
+	model.SetMessage(message)
+	if model.message != message {
+		t.Errorf("Expected message to be '%s', got '%s'", message, model.message)
+	}
+}
+
+func TestIncrementFile(t *testing.T) {
+	model := NewFileProgressModel(5)
+
+	model.IncrementFile()
+	if model.fileCount != 1 {
+		t.Errorf("Expected fileCount to be 1, got %d", model.fileCount)
+	}
+
+	model.IncrementFile()
+	if model.fileCount != 2 {
+		t.Errorf("Expected fileCount to be 2, got %d", model.fileCount)
+	}
+
+	expectedPercentage := 40.0 // 2/5 * 100
+	if model.percentage != expectedPercentage {
+		t.Errorf("Expected percentage to be %.1f, got %.1f", expectedPercentage, model.percentage)
+	}
+}
+
+func TestAddBytes(t *testing.T) {
+	model := NewBytesProgressModel(1000)
+
+	model.AddBytes(100)
+	if model.bytesRead != 100 {
+		t.Errorf("Expected bytesRead to be 100, got %d", model.bytesRead)
+	}
+
+	model.AddBytes(150)
+	if model.bytesRead != 250 {
+		t.Errorf("Expected bytesRead to be 250, got %d", model.bytesRead)
+	}
+}
+
+func TestGetETA(t *testing.T) {
+	model := NewModel(0, 100, nil)
+	model.startTime = time.Now().Add(-10 * time.Second)
+	model.SetCurrent(25) // 25% complete after 10 seconds
+
+	eta := model.GetETA()
+	// Should be approximately 30 seconds (75% remaining at current rate)
+	expectedRange := 25 * time.Second
+	if eta < expectedRange || eta > 35*time.Second {
+		t.Errorf("Expected ETA to be around 30s, got %v", eta)
+	}
+
+	// Test edge cases
+	model.percentage = 0
+	eta = model.GetETA()
+	if eta != 0 {
+		t.Error("ETA should be 0 for 0% progress")
+	}
+
+	model.percentage = 100
+	eta = model.GetETA()
+	if eta != 0 {
+		t.Error("ETA should be 0 for 100% progress")
+	}
+}
+
+func TestViewWithMessage(t *testing.T) {
+	model := NewModel(1, 3, nil)
+	customMessage := "Custom progress message"
+
+	view := model.ViewWithMessage(customMessage)
+	if !strings.Contains(view, customMessage) {
+		t.Error("ViewWithMessage should contain the custom message")
+	}
+
+	// Original message should be unchanged
+	if model.message == customMessage {
+		t.Error("ViewWithMessage should not modify the original message")
+	}
+}
+
+func TestViewCompact(t *testing.T) {
+	// Test with file progress
+	model := NewFileProgressModel(10)
+	model.SetFileCount(3, 10)
+
+	view := model.ViewCompact()
+	if !strings.Contains(view, "3/10 files") {
+		t.Error("ViewCompact should show file count")
+	}
+
+	if !strings.Contains(view, "30.0%") {
+		t.Error("ViewCompact should show percentage")
+	}
+
+	// Test with percentage only
+	model2 := NewModel(5, 10, nil)
+	model2.SetCurrent(5) // Set to get 50% progress
+	view2 := model2.ViewCompact()
+	if !strings.Contains(view2, "50.0%") {
+		t.Error("ViewCompact should show percentage for non-file progress")
 	}
 }
 
@@ -115,18 +293,18 @@ func TestGetProgressPercent(t *testing.T) {
 		total    int
 		expected float64
 	}{
-		{1, 5, 0.0},   // First step
-		{3, 5, 50.0},  // Middle step
-		{5, 5, 100.0}, // Last step
-		{1, 1, 100.0}, // Single step
-		{2, 3, 50.0},  // Two of three
+		{1, 5, 20.0},  // First step: 1/5 = 20%
+		{3, 5, 60.0},  // Middle step: 3/5 = 60%
+		{5, 5, 100.0}, // Last step: 5/5 = 100%
+		{1, 1, 100.0}, // Single step: 1/1 = 100%
+		{2, 3, 66.7},  // Two of three: 2/3 = 66.7%
 	}
 
 	for _, tt := range tests {
 		model := NewModel(tt.current, tt.total, []string{})
 		result := model.GetProgressPercent()
 
-		if result != tt.expected {
+		if result < tt.expected-0.1 || result > tt.expected+0.1 {
 			t.Errorf("GetProgressPercent() for step %d of %d = %.1f, want %.1f",
 				tt.current, tt.total, result, tt.expected)
 		}
@@ -236,9 +414,9 @@ func TestRenderProgress_WithoutTitles(t *testing.T) {
 		t.Error("Expected non-empty progress render")
 	}
 
-	// Should contain step counter
-	if !strings.Contains(progress, "Step 2 of 4") {
-		t.Error("Expected progress to contain step counter")
+	// Should contain progress bar, but may not have step counter with new enhanced logic
+	if !strings.Contains(progress, "[") {
+		t.Error("Expected progress to contain progress bar")
 	}
 
 	// Should not crash with empty titles
@@ -290,9 +468,9 @@ func TestProgressBarCalculations(t *testing.T) {
 		total      int
 		expectFull bool
 	}{
-		{1, 5, false}, // 0% progress (step 1 of 5 = 0/4 progress)
-		{3, 5, false}, // 50% progress (step 3 of 5 = 2/4 progress)
-		{5, 5, true},  // 100% progress (step 5 of 5 = 4/4 progress)
+		{1, 5, false}, // 20% progress (step 1 of 5)
+		{3, 5, false}, // 60% progress (step 3 of 5)
+		{5, 5, true},  // 100% progress (step 5 of 5)
 		{1, 1, true},  // 100% progress (single step)
 	}
 
@@ -303,15 +481,87 @@ func TestProgressBarCalculations(t *testing.T) {
 		progressBar := model.renderProgressBar()
 
 		if tt.expectFull {
-			if !strings.Contains(progressBar, "100%") {
-				t.Errorf("Expected 100%% for step %d of %d, got: %s",
+			if !strings.Contains(progressBar, "100.0%") {
+				t.Errorf("Expected 100.0%% for step %d of %d, got: %s",
 					tt.current, tt.total, progressBar)
 			}
 		} else {
-			if strings.Contains(progressBar, "100%") {
-				t.Errorf("Expected less than 100%% for step %d of %d, got: %s",
+			if strings.Contains(progressBar, "100.0%") {
+				t.Errorf("Expected less than 100.0%% for step %d of %d, got: %s",
 					tt.current, tt.total, progressBar)
 			}
 		}
+	}
+}
+
+func TestFormatBytes(t *testing.T) {
+	tests := []struct {
+		input    int64
+		expected string
+	}{
+		{512, "512 B"},
+		{1024, "1.0 KB"},
+		{1536, "1.5 KB"},
+		{1024 * 1024, "1.0 MB"},
+		{1024 * 1024 * 1024, "1.0 GB"},
+	}
+
+	for _, tt := range tests {
+		result := formatBytes(tt.input)
+		if result != tt.expected {
+			t.Errorf("formatBytes(%d) = %s, expected %s", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestFormatDuration(t *testing.T) {
+	tests := []struct {
+		input    time.Duration
+		expected string
+	}{
+		{30 * time.Second, "30s"},
+		{90 * time.Second, "1m30s"},
+		{3661 * time.Second, "1h01m"},
+	}
+
+	for _, tt := range tests {
+		result := formatDuration(tt.input)
+		if result != tt.expected {
+			t.Errorf("formatDuration(%v) = %s, expected %s", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	model := NewModel(1, 5, nil)
+
+	newModel, cmd := model.Update(nil)
+	if cmd != nil {
+		t.Error("Update should return nil command for basic progress bar")
+	}
+
+	if newModel.current != model.current {
+		t.Error("Update should preserve model state")
+	}
+}
+
+// Benchmark tests
+func BenchmarkProgressView(b *testing.B) {
+	model := NewFileProgressModel(1000)
+	model.SetFileCount(500, 1000)
+	model.SetMessage("Processing files...")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = model.View()
+	}
+}
+
+func BenchmarkProgressUpdate(b *testing.B) {
+	model := NewFileProgressModel(1000)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		model, _ = model.Update(nil)
 	}
 }

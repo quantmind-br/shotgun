@@ -39,13 +39,13 @@ func TestNewSizeEstimator(t *testing.T) {
 
 func TestCalculateTemplateSize(t *testing.T) {
 	tests := []struct {
-		name           string
-		template       *models.Template
-		variables      map[string]string
-		mockResult     string
-		mockError      error
-		expectedSize   int64
-		expectError    bool
+		name         string
+		template     *models.Template
+		variables    map[string]string
+		mockResult   string
+		mockError    error
+		expectedSize int64
+		expectError  bool
 	}{
 		{
 			name: "Simple template processing",
@@ -129,7 +129,7 @@ func TestCalculateTemplateSizeFallback(t *testing.T) {
 func TestCalculateFileStructureSize(t *testing.T) {
 	// Create temporary test files
 	tempDir := t.TempDir()
-	
+
 	file1 := filepath.Join(tempDir, "test1.txt")
 	file2 := filepath.Join(tempDir, "test2.txt")
 
@@ -139,7 +139,7 @@ func TestCalculateFileStructureSize(t *testing.T) {
 	if err := os.WriteFile(file1, []byte(content1), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
-	
+
 	if err := os.WriteFile(file2, []byte(content2), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -167,7 +167,7 @@ func TestCalculateFileStructureSize(t *testing.T) {
 func TestCalculateProgressively(t *testing.T) {
 	// Create temporary test files
 	tempDir := t.TempDir()
-	
+
 	files := make([]string, 3)
 	for i := 0; i < 3; i++ {
 		file := filepath.Join(tempDir, "test"+string(rune('1'+i))+".txt")
@@ -213,7 +213,7 @@ func TestCalculateProgressively(t *testing.T) {
 func TestCalculateProgressivelyWithCancellation(t *testing.T) {
 	// Create temporary test files
 	tempDir := t.TempDir()
-	
+
 	files := make([]string, 5)
 	for i := 0; i < 5; i++ {
 		file := filepath.Join(tempDir, "test"+string(rune('1'+i))+".txt")
@@ -226,7 +226,7 @@ func TestCalculateProgressivelyWithCancellation(t *testing.T) {
 	estimator := NewSizeEstimator(nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	var progressUpdates int
 	callback := func(processed, total int, currentFile string) {
 		progressUpdates++
@@ -249,7 +249,7 @@ func TestCalculateProgressivelyWithCancellation(t *testing.T) {
 func TestEstimatePromptSize(t *testing.T) {
 	// Create temporary test files
 	tempDir := t.TempDir()
-	
+
 	file1 := filepath.Join(tempDir, "test1.txt")
 	if err := os.WriteFile(file1, []byte("test content"), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
@@ -299,9 +299,9 @@ func TestEstimatePromptSize(t *testing.T) {
 	}
 
 	// Total should be sum of all components
-	expectedTotal := estimate.TemplateSize + estimate.FileContentSize + 
+	expectedTotal := estimate.TemplateSize + estimate.FileContentSize +
 		estimate.TreeStructSize + estimate.OverheadSize
-	
+
 	if estimate.TotalSize != expectedTotal {
 		t.Errorf("Total size mismatch: expected %d, got %d", expectedTotal, estimate.TotalSize)
 	}
@@ -333,7 +333,7 @@ func TestDetermineWarningLevel(t *testing.T) {
 
 func TestCalculateFormattingOverhead(t *testing.T) {
 	estimator := NewSizeEstimator(nil)
-	
+
 	selectedFiles := []string{
 		"path/to/file1.go",
 		"path/to/file2.go",
@@ -355,20 +355,20 @@ func TestCalculateFormattingOverhead(t *testing.T) {
 
 func TestCalculateTreeStructureOverhead(t *testing.T) {
 	estimator := NewSizeEstimator(nil)
-	
+
 	tests := []struct {
-		path         string
-		expectedMin  int64
+		path        string
+		expectedMin int64
 	}{
-		{"file.go", 6},                     // Simple file
-		{"src/main.go", 10},               // One level deep
-		{"src/pkg/util/helper.go", 20},    // Multiple levels
+		{"file.go", 6},                 // Simple file
+		{"src/main.go", 10},            // One level deep
+		{"src/pkg/util/helper.go", 20}, // Multiple levels
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			overhead := estimator.calculateTreeStructureOverhead(tt.path)
-			
+
 			if overhead < tt.expectedMin {
 				t.Errorf("Expected overhead at least %d, got %d", tt.expectedMin, overhead)
 			}
@@ -379,7 +379,7 @@ func TestCalculateTreeStructureOverhead(t *testing.T) {
 func BenchmarkEstimatePromptSize(b *testing.B) {
 	// Create temporary test files
 	tempDir := b.TempDir()
-	
+
 	files := make([]string, 100)
 	for i := 0; i < 100; i++ {
 		file := filepath.Join(tempDir, "file"+string(rune('0'+i%10))+".txt")

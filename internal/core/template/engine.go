@@ -31,9 +31,9 @@ type templateEngine struct {
 
 // ProcessingOptions configures template processing behavior
 type ProcessingOptions struct {
-	StrictMode    bool     // Fail on missing variables
-	AllowedFuncs  []string // Restrict available functions
-	MaxSize       int64    // Maximum output size
+	StrictMode   bool     // Fail on missing variables
+	AllowedFuncs []string // Restrict available functions
+	MaxSize      int64    // Maximum output size
 }
 
 // NewTemplateEngine creates a new template engine with optional configuration

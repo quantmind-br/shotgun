@@ -22,7 +22,7 @@ type ClipboardCopyMsg struct {
 	Text string
 }
 
-// ClipboardPasteMsg represents a clipboard paste operation  
+// ClipboardPasteMsg represents a clipboard paste operation
 type ClipboardPasteMsg struct {
 	Text string
 }
@@ -49,10 +49,10 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 	case ClipboardPasteMsg:
 		// Handle clipboard paste result
 		current := m.textarea.Value()
-		
+
 		// For now, append pasted text - cursor positioning will be handled by textarea
 		newContent := current + msg.Text
-		
+
 		m.textarea.SetValue(newContent)
 		m.updateCounters()
 
@@ -117,7 +117,7 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 			// Let the textarea handle other keys (typing, cursor movement, etc.)
 			m.textarea, cmd = m.textarea.Update(msg)
 			cmds = append(cmds, cmd)
-			
+
 			// Update counters after text changes
 			m.updateCounters()
 		}
@@ -126,7 +126,7 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 		// Update textarea with other messages
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
-		
+
 		// Update counters after potential text changes
 		m.updateCounters()
 	}

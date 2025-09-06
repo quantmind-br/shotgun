@@ -37,6 +37,16 @@ var (
 
 // View renders the file tree screen
 func (m FileTreeModel) View() string {
+	// Show loading state with spinner during scanning
+	if m.scanning {
+		return m.renderScanningState()
+	}
+
+	// Show error state if scan failed
+	if m.scanError != nil {
+		return m.renderErrorState()
+	}
+
 	if len(m.items) == 0 {
 		return "Loading file tree...\n" + m.statusBar()
 	}
@@ -52,6 +62,52 @@ func (m FileTreeModel) View() string {
 	m.viewport.SetContent(content.String())
 
 	return m.viewport.View() + "\n" + m.statusBar() + "\n" + m.helpBar()
+}
+
+// renderScanningState shows the spinner and progress during file scanning
+func (m FileTreeModel) renderScanningState() string {
+	var message string
+	if m.filesFound > 0 {
+		message = fmt.Sprintf("Found %d files", m.filesFound)
+		if m.currentDir != "" {
+			message += fmt.Sprintf(" (scanning %s/)", m.currentDir)
+		}
+	} else {
+		message = "Scanning project files..."
+	}
+
+	m.spinner.SetMessage(message)
+	spinnerView := m.spinner.ViewWithCancel()
+
+	return spinnerView + "\n\n" + m.renderScanningStatusBar()
+}
+
+// renderErrorState shows scan error information
+func (m FileTreeModel) renderErrorState() string {
+	errorMsg := fmt.Sprintf("❌ Scan failed: %s", m.scanError.Error())
+	retryHint := "\nPress 'r' to retry scanning or 'q' to quit"
+
+	return errorMsg + retryHint
+}
+
+// renderScanningStatusBar shows status during scanning
+func (m FileTreeModel) renderScanningStatusBar() string {
+	var status string
+	if m.filesFound > 0 {
+		status = fmt.Sprintf("📄 %d files discovered", m.filesFound)
+	} else {
+		status = "🔍 Discovering files..."
+	}
+
+	// Add padding to fill width if needed
+	if m.width > 0 {
+		padding := m.width - len(status)
+		if padding > 0 {
+			status += strings.Repeat(" ", padding)
+		}
+	}
+
+	return statusStyle.Render(status)
 }
 
 // flattenTree converts the tree structure to a flat list for rendering
@@ -152,7 +208,12 @@ func (m FileTreeModel) statusBar() string {
 
 // helpBar renders the help/navigation bar
 func (m FileTreeModel) helpBar() string {
-	help := "↑/↓ or k/j: navigate │ ←/→ or h/l: expand/collapse │ space: toggle │ F3: continue │ q: quit"
+	var help string
+	if m.scanning {
+		help = "ESC: cancel scanning │ q: quit"
+	} else {
+		help = "↑/↓ or k/j: navigate │ ←/→ or h/l: expand/collapse │ space: toggle │ F3: continue │ q: quit"
+	}
 	return helpStyle.Render(help)
 }
 

@@ -35,7 +35,7 @@ func (fw *FileWriter) WritePromptFile(content string, basePath string) (string, 
 	// Generate base filename with timestamp
 	timestamp := time.Now()
 	baseFilename := fw.GenerateFilename(timestamp)
-	
+
 	// Resolve base path (use current directory if empty)
 	if basePath == "" {
 		var err error
@@ -56,7 +56,7 @@ func (fw *FileWriter) WritePromptFile(content string, basePath string) (string, 
 
 	// Use atomic file writing pattern: write to temp file, then rename
 	tempPath := fullPath + ".tmp"
-	
+
 	// Write to temporary file first
 	file, err := os.Create(tempPath)
 	if err != nil {
@@ -97,7 +97,7 @@ func (fw *FileWriter) WritePromptFile(content string, basePath string) (string, 
 
 // GenerateFilename creates a timestamp-based filename
 func (fw *FileWriter) GenerateFilename(timestamp time.Time) string {
-	return fmt.Sprintf("shotgun_prompt_%s.md", 
+	return fmt.Sprintf("shotgun_prompt_%s.md",
 		timestamp.Format("20060102_1504"))
 }
 
@@ -114,7 +114,7 @@ func (fw *FileWriter) CheckCollisions(filepath string) string {
 		dir = ""
 	}
 	filename := filepath[len(dir):]
-	
+
 	base := filename
 	ext := ""
 	if dotIndex := strings.LastIndex(filename, "."); dotIndex != -1 {
@@ -127,13 +127,13 @@ func (fw *FileWriter) CheckCollisions(filepath string) string {
 	for {
 		candidateFilename := fmt.Sprintf("%s_%d%s", base, counter, ext)
 		candidatePath := dir + candidateFilename
-		
+
 		if _, err := os.Stat(candidatePath); os.IsNotExist(err) {
 			return candidatePath
 		}
-		
+
 		counter++
-		
+
 		// Prevent infinite loop (reasonable upper limit)
 		if counter > 1000 {
 			return filepath + "_" + strconv.FormatInt(time.Now().UnixNano(), 10)
@@ -166,7 +166,7 @@ func (fw *FileWriter) ValidateWritePermissions(path string) error {
 		}
 		return fmt.Errorf("cannot write to directory: %w", err)
 	}
-	
+
 	file.Close()
 	os.Remove(tempFile)
 
@@ -183,14 +183,14 @@ func (fw *FileWriter) checkDiskSpace(path string) error {
 	// Try to get filesystem stats (cross-platform approach)
 	var stat fs.FileInfo
 	var err error
-	
+
 	if stat, err = os.Stat(path); err != nil {
 		return fmt.Errorf("cannot check disk space: %w", err)
 	}
-	
+
 	// Basic heuristic: if we can create a small test file, assume we have space
 	// More sophisticated disk space checking would be platform-specific
 	_ = stat // Use stat to avoid unused variable warning
-	
+
 	return nil
 }

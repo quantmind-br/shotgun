@@ -23,7 +23,7 @@ func TestTaskInputModel_ClipboardMessageIntegration(t *testing.T) {
 
 		// Create clipboard copy message directly
 		copyMsg := ClipboardCopyMsg{Text: testContent}
-		
+
 		// While this doesn't test the key->message conversion,
 		// it tests the message handling logic
 		_ = copyMsg // We would send this to app layer in real usage
@@ -52,7 +52,7 @@ func TestTaskInputModel_ClipboardMessageIntegration(t *testing.T) {
 	// Test clipboard error handling
 	t.Run("clipboard_error_handling", func(t *testing.T) {
 		model.SetError(nil) // Clear any existing error
-		
+
 		// Simulate clipboard error
 		clipboardError := ClipboardErrorMsg{Error: errors.New("clipboard access denied")}
 		updatedModel, cmd := model.Update(clipboardError)
@@ -110,7 +110,7 @@ func TestTaskInputModel_NavigationIntegration(t *testing.T) {
 	t.Run("advancement_with_validation", func(t *testing.T) {
 		// Test F3 advancement with valid content
 		model.SetContent("Valid content for advancement")
-		
+
 		f3Key := tea.KeyMsg{Type: tea.KeyF3}
 		updatedModel, cmd := model.Update(f3Key)
 
@@ -138,7 +138,7 @@ func TestTaskInputModel_NavigationIntegration(t *testing.T) {
 		// Test F3 advancement with empty content
 		model.SetContent("")
 		model.SetError(nil) // Clear any existing error
-		
+
 		f3Key := tea.KeyMsg{Type: tea.KeyF3}
 		updatedModel, cmd := model.Update(f3Key)
 
@@ -167,7 +167,7 @@ func TestTaskInputModel_StateManagementIntegration(t *testing.T) {
 		// Test external content update
 		externalContent := "Content updated externally"
 		contentMsg := TaskContentUpdatedMsg{Content: externalContent}
-		
+
 		updatedModel, cmd := model.Update(contentMsg)
 
 		// All state should be synchronized
@@ -417,11 +417,11 @@ func TestTaskInputModel_MessageHandlingIntegration(t *testing.T) {
 		// Start with window size
 		sizeMsg := tea.WindowSizeMsg{Width: 100, Height: 30}
 		model, cmd := model.Update(sizeMsg)
-		
+
 		if model.width != 100 || model.height != 30 {
 			t.Error("window size should be updated")
 		}
-		
+
 		if cmd != nil {
 			t.Error("window size update should not generate commands")
 		}
@@ -429,11 +429,11 @@ func TestTaskInputModel_MessageHandlingIntegration(t *testing.T) {
 		// Add content via external update
 		contentMsg := TaskContentUpdatedMsg{Content: "Updated content"}
 		model, cmd = model.Update(contentMsg)
-		
+
 		if model.GetContent() != "Updated content" {
 			t.Error("content should be updated via message")
 		}
-		
+
 		if cmd != nil {
 			t.Error("content update should not generate commands")
 		}
@@ -441,11 +441,11 @@ func TestTaskInputModel_MessageHandlingIntegration(t *testing.T) {
 		// Test error handling
 		errorMsg := ClipboardErrorMsg{Error: errors.New("test error")}
 		model, cmd = model.Update(errorMsg)
-		
+
 		if model.GetError() == nil {
 			t.Error("error should be set via message")
 		}
-		
+
 		if cmd != nil {
 			t.Error("error message should not generate commands")
 		}
@@ -453,13 +453,13 @@ func TestTaskInputModel_MessageHandlingIntegration(t *testing.T) {
 		// Test paste operation
 		pasteMsg := ClipboardPasteMsg{Text: " appended"}
 		model, cmd = model.Update(pasteMsg)
-		
+
 		expectedContent := "Updated content appended"
 		if model.GetContent() != expectedContent {
-			t.Errorf("content should be updated after paste: expected %q, got %q", 
+			t.Errorf("content should be updated after paste: expected %q, got %q",
 				expectedContent, model.GetContent())
 		}
-		
+
 		if cmd != nil {
 			t.Error("paste message should not generate commands")
 		}
@@ -469,15 +469,15 @@ func TestTaskInputModel_MessageHandlingIntegration(t *testing.T) {
 	t.Run("unknown_message_handling", func(t *testing.T) {
 		// Send an unknown message type
 		unknownMsg := struct{ Value string }{Value: "unknown"}
-		
+
 		originalContent := model.GetContent()
 		updatedModel, cmd := model.Update(unknownMsg)
-		
+
 		// Should handle gracefully without changes
 		if updatedModel.GetContent() != originalContent {
 			t.Error("unknown messages should not affect content")
 		}
-		
+
 		// Command handling depends on textarea behavior
 		_ = cmd
 	})
@@ -494,63 +494,63 @@ func TestTaskInputModel_CompleteWorkflowIntegration(t *testing.T) {
 		if model.GetContent() != "" {
 			t.Error("expected empty content initially")
 		}
-		
+
 		// Add some initial content
 		contentMsg := TaskContentUpdatedMsg{Content: "Initial task"}
 		updatedModel, cmd := model.Update(contentMsg)
-		
+
 		if updatedModel.GetContent() != "Initial task" {
 			t.Error("expected content to be set by message")
 		}
-		
+
 		if cmd != nil {
 			t.Error("expected no command from content update message")
 		}
-		
+
 		// Test clipboard paste integration
 		pasteMsg := ClipboardPasteMsg{Text: " with additional details"}
 		updatedModel, cmd = updatedModel.Update(pasteMsg)
-		
+
 		expectedContent := "Initial task with additional details"
 		if updatedModel.GetContent() != expectedContent {
 			t.Errorf("expected content %q after paste, got %q", expectedContent, updatedModel.GetContent())
 		}
-		
+
 		// Verify character and line counts are updated
 		expectedCharCount := len([]rune(expectedContent))
 		if updatedModel.charCount != expectedCharCount {
 			t.Errorf("expected char count %d, got %d", expectedCharCount, updatedModel.charCount)
 		}
-		
+
 		expectedLineCount := 1 // Single line content
 		if updatedModel.lineCount != expectedLineCount {
 			t.Errorf("expected line count %d, got %d", expectedLineCount, updatedModel.lineCount)
 		}
-		
+
 		// Test error state handling
 		clipboardError := ClipboardErrorMsg{Error: errors.New("clipboard access failed")}
 		updatedModel, cmd = updatedModel.Update(clipboardError)
-		
+
 		if updatedModel.GetError() == nil {
 			t.Error("expected error to be set from clipboard error message")
 		}
-		
+
 		if updatedModel.GetError().Error() != "clipboard access failed" {
 			t.Errorf("expected clipboard error message, got %v", updatedModel.GetError())
 		}
-		
+
 		// Test window resize during operation
 		resizeMsg := tea.WindowSizeMsg{Width: 120, Height: 40}
 		updatedModel, cmd = updatedModel.Update(resizeMsg)
-		
+
 		if updatedModel.width != 120 {
 			t.Errorf("expected width to be updated to 120, got %d", updatedModel.width)
 		}
-		
+
 		if updatedModel.height != 40 {
 			t.Errorf("expected height to be updated to 40, got %d", updatedModel.height)
 		}
-		
+
 		// Content should be preserved through resize
 		if updatedModel.GetContent() != expectedContent {
 			t.Error("content should be preserved during window resize")
@@ -566,12 +566,12 @@ func TestTaskInputModel_MessageHandlingEdgeCases(t *testing.T) {
 		// Test pasting empty text
 		pasteMsg := ClipboardPasteMsg{Text: ""}
 		updatedModel, cmd := model.Update(pasteMsg)
-		
+
 		// Should handle empty paste gracefully
 		if updatedModel.GetContent() != "" {
 			t.Error("expected content to remain empty after empty paste")
 		}
-		
+
 		if cmd != nil {
 			t.Error("expected no command from empty paste")
 		}
@@ -581,15 +581,15 @@ func TestTaskInputModel_MessageHandlingEdgeCases(t *testing.T) {
 		// Test handling multiple errors in sequence
 		error1 := ClipboardErrorMsg{Error: errors.New("first error")}
 		updatedModel, _ := model.Update(error1)
-		
+
 		if updatedModel.GetError().Error() != "first error" {
 			t.Error("expected first error to be set")
 		}
-		
+
 		// Set new error - should overwrite previous
 		error2 := ClipboardErrorMsg{Error: errors.New("second error")}
 		updatedModel, _ = updatedModel.Update(error2)
-		
+
 		if updatedModel.GetError().Error() != "second error" {
 			t.Error("expected second error to overwrite first")
 		}
@@ -598,21 +598,21 @@ func TestTaskInputModel_MessageHandlingEdgeCases(t *testing.T) {
 	t.Run("utf8_paste_integration", func(t *testing.T) {
 		// Test pasting UTF-8 content
 		model.SetContent("Hello ")
-		
+
 		pasteMsg := ClipboardPasteMsg{Text: "世界 🌍"}
 		updatedModel, cmd := model.Update(pasteMsg)
-		
+
 		expectedContent := "Hello 世界 🌍"
 		if updatedModel.GetContent() != expectedContent {
 			t.Errorf("expected UTF-8 content %q, got %q", expectedContent, updatedModel.GetContent())
 		}
-		
+
 		// Verify proper UTF-8 character counting
 		expectedCharCount := len([]rune(expectedContent))
 		if updatedModel.charCount != expectedCharCount {
 			t.Errorf("expected UTF-8 char count %d, got %d", expectedCharCount, updatedModel.charCount)
 		}
-		
+
 		if cmd != nil {
 			t.Error("expected no command from UTF-8 paste")
 		}

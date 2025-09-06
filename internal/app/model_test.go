@@ -236,7 +236,7 @@ func TestBuildConfirmationSummary(t *testing.T) {
 	if !app.Confirmation.IsReady() {
 		t.Error("Expected confirmation to be ready after buildConfirmationSummary")
 	}
-	
+
 	// The confirmation model now manages its data internally
 	// We just verify that it was initialized correctly
 }
@@ -268,4 +268,3 @@ func TestContext(t *testing.T) {
 		// Expected - context should not be done
 	}
 }
-

@@ -43,11 +43,11 @@ func NewRulesInputModel() RulesInputModel {
 	ta.CharLimit = 5000 // Reasonable limit for rules
 	ta.SetWidth(80)
 	ta.SetHeight(8) // Smaller than task input since rules are typically shorter
-	
+
 	// Enable word wrap and proper text handling
 	ta.ShowLineNumbers = false
 	ta.KeyMap.InsertNewline.SetEnabled(true)
-	
+
 	// Configure for multiline editing with UTF-8 support
 	// (The textarea is already properly configured by default)
 
@@ -78,14 +78,14 @@ func (m *RulesInputModel) UpdateSize(width, height int) {
 	if width <= 0 || height <= 0 {
 		return
 	}
-	
+
 	m.width = width
 	m.height = height
-	
+
 	// Update textarea dimensions with padding for UI elements
 	textareaWidth := width - 4
 	textareaHeight := height - 10 // Leave room for header, footer, counters
-	
+
 	// Ensure minimum viable dimensions
 	if textareaWidth < 20 {
 		textareaWidth = 20
@@ -93,7 +93,7 @@ func (m *RulesInputModel) UpdateSize(width, height int) {
 	if textareaHeight < 3 {
 		textareaHeight = 3
 	}
-	
+
 	m.textarea.SetWidth(textareaWidth)
 	m.textarea.SetHeight(textareaHeight)
 	m.viewport.Width = textareaWidth
@@ -170,10 +170,10 @@ func (m RulesInputModel) Update(msg tea.Msg) (RulesInputModel, tea.Cmd) {
 	case ClipboardPasteMsg:
 		// Handle clipboard paste result
 		current := m.textarea.Value()
-		
+
 		// For now, append pasted text - cursor positioning will be handled by textarea
 		newContent := current + msg.Text
-		
+
 		m.textarea.SetValue(newContent)
 		m.updateCounters()
 
@@ -225,7 +225,7 @@ func (m RulesInputModel) Update(msg tea.Msg) (RulesInputModel, tea.Cmd) {
 			// Let the textarea handle other keys (typing, cursor movement, etc.)
 			m.textarea, cmd = m.textarea.Update(msg)
 			cmds = append(cmds, cmd)
-			
+
 			// Update counters after text changes
 			m.updateCounters()
 		}
@@ -234,7 +234,7 @@ func (m RulesInputModel) Update(msg tea.Msg) (RulesInputModel, tea.Cmd) {
 		// Update textarea with other messages
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
-		
+
 		// Update counters after potential text changes
 		m.updateCounters()
 	}
@@ -274,15 +274,15 @@ func (m RulesInputModel) renderMain() string {
 	// Text area with proper styling based on focus
 	textareaContent := m.textarea.View()
 	if m.textarea.Focused() {
-		textareaContent = focusedTextareaStyle.Width(m.width-4).Render(textareaContent)
+		textareaContent = focusedTextareaStyle.Width(m.width - 4).Render(textareaContent)
 	} else {
-		textareaContent = textareaStyle.Width(m.width-4).Render(textareaContent)
+		textareaContent = textareaStyle.Width(m.width - 4).Render(textareaContent)
 	}
 	sections = append(sections, textareaContent)
 
 	// Character and line counts
 	countText := fmt.Sprintf("Lines: %d | Characters: %d", m.lineCount, m.charCount)
-	countDisplay := countStyle.Width(m.width-4).Render(countText)
+	countDisplay := countStyle.Width(m.width - 4).Render(countText)
 	sections = append(sections, countDisplay)
 
 	// Help text for keyboard shortcuts
@@ -292,7 +292,7 @@ func (m RulesInputModel) renderMain() string {
 		"F2: Back to Task Description",
 		"Ctrl+C: Copy • Ctrl+V: Paste",
 	}
-	help := helpStyle.Width(m.width-4).Render(strings.Join(helpText, " • "))
+	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -307,7 +307,7 @@ func (m RulesInputModel) renderError() string {
 	sections = append(sections, header)
 
 	// Error message
-	errorMsg := errorStyle.Width(m.width-4).Render(fmt.Sprintf("Error: %s", m.err.Error()))
+	errorMsg := errorStyle.Width(m.width - 4).Render(fmt.Sprintf("Error: %s", m.err.Error()))
 	sections = append(sections, errorMsg)
 
 	// Instructions
@@ -321,10 +321,10 @@ func (m RulesInputModel) renderError() string {
 func (m *RulesInputModel) updateCounters() {
 	// Update content from textarea
 	m.content = m.textarea.Value()
-	
+
 	// UTF-8 aware character counting
 	m.charCount = len([]rune(m.content))
-	
+
 	// Line counting
 	if m.content == "" {
 		m.lineCount = 1

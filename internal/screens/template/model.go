@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/diogopedro/shotgun/internal/components/spinner"
 	"github.com/diogopedro/shotgun/internal/models"
 )
 
@@ -15,6 +16,11 @@ type TemplatesLoadedMsg struct {
 
 type TemplateLoadErrorMsg struct {
 	Error error
+}
+
+type TemplateDiscoveryProgressMsg struct {
+	Found int
+	Path  string
 }
 
 type TemplateSelectedMsg struct {
@@ -34,9 +40,15 @@ type TemplateModel struct {
 	height   int
 
 	// Screen state
-	loading bool
-	err     error
-	ready   bool
+	loading     bool
+	discovering bool // New state for template discovery
+	err         error
+	ready       bool
+
+	// Loading/discovery state
+	spinner     spinner.Model
+	foundCount  int
+	currentPath string
 
 	// Detail panel state
 	showDetails bool
@@ -64,10 +76,14 @@ func NewTemplateModel() TemplateModel {
 		selected:    nil,
 		viewport:    viewport.New(0, 0),
 		loading:     true,
+		discovering: false,
 		err:         nil,
 		ready:       false,
 		showDetails: true,
 		keyMap:      DefaultKeyMap(),
+		spinner:     spinner.New(spinner.SpinnerDots),
+		foundCount:  0,
+		currentPath: "",
 	}
 }
 
@@ -96,6 +112,27 @@ func (m *TemplateModel) UpdateSize(width, height int) {
 	m.list.SetSize(listWidth, listHeight)
 }
 
+// StartDiscovery begins template discovery
+func (m *TemplateModel) StartDiscovery() tea.Cmd {
+	m.discovering = true
+	m.loading = true
+	m.err = nil
+	m.foundCount = 0
+	m.currentPath = ""
+	return m.spinner.Start()
+}
+
+// StopDiscovery stops template discovery
+func (m *TemplateModel) StopDiscovery() {
+	m.discovering = false
+	m.spinner.Stop()
+}
+
+// IsDiscovering returns true if currently discovering templates
+func (m TemplateModel) IsDiscovering() bool {
+	return m.discovering
+}
+
 // SetTemplates updates the template list
 func (m *TemplateModel) SetTemplates(templates []models.Template) {
 	m.templates = templates
@@ -106,6 +143,7 @@ func (m *TemplateModel) SetTemplates(templates []models.Template) {
 	}
 
 	m.list.SetItems(items)
+	m.StopDiscovery()
 	m.loading = false
 	m.ready = true
 
@@ -128,6 +166,7 @@ func (m TemplateModel) CanAdvance() bool {
 // SetError sets an error state
 func (m *TemplateModel) SetError(err error) {
 	m.err = err
+	m.StopDiscovery()
 	m.loading = false
 }
 

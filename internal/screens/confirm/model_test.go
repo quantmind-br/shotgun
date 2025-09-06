@@ -21,14 +21,15 @@ func TestNewConfirmModel(t *testing.T) {
 		t.Error("Expected initial estimated size to be 0")
 	}
 
-	if model.progress.Width != 40 {
-		t.Errorf("Expected progress width to be 40, got %d", model.progress.Width)
+	// Our enhanced progress bar doesn't expose Width directly - test that it's properly initialized
+	if model.progress.GetTotal() != 100 {
+		t.Errorf("Expected progress total to be 100, got %d", model.progress.GetTotal())
 	}
 }
 
 func TestUpdateWindowSize(t *testing.T) {
 	model := NewConfirmModel()
-	
+
 	model.UpdateWindowSize(120, 40)
 
 	if model.width != 120 {
@@ -52,14 +53,14 @@ func TestUpdateWindowSize(t *testing.T) {
 
 func TestSetData(t *testing.T) {
 	model := NewConfirmModel()
-	
+
 	template := &models.Template{
 		Name:        "Test Template",
 		Version:     "1.0",
 		Description: "Test description",
 		Content:     "Test content",
 	}
-	
+
 	selectedFiles := []string{"file1.go", "file2.go"}
 	taskContent := "Test task content"
 	rulesContent := "Test rules content"
@@ -119,32 +120,32 @@ func TestSetEstimatedSize(t *testing.T) {
 
 func TestUpdateWarningLevel(t *testing.T) {
 	tests := []struct {
-		name         string
-		size         int64
+		name          string
+		size          int64
 		expectedLevel WarningLevel
 		expectWarning bool
 	}{
 		{
-			name:         "Normal size",
-			size:         50 * 1024, // 50KB
+			name:          "Normal size",
+			size:          50 * 1024, // 50KB
 			expectedLevel: WarningNone,
 			expectWarning: false,
 		},
 		{
-			name:         "Large size",
-			size:         150 * 1024, // 150KB
+			name:          "Large size",
+			size:          150 * 1024, // 150KB
 			expectedLevel: WarningLarge,
 			expectWarning: true,
 		},
 		{
-			name:         "Very large size",
-			size:         700 * 1024, // 700KB
+			name:          "Very large size",
+			size:          700 * 1024, // 700KB
 			expectedLevel: WarningVeryLarge,
 			expectWarning: true,
 		},
 		{
-			name:         "Excessive size",
-			size:         3 * 1024 * 1024, // 3MB
+			name:          "Excessive size",
+			size:          3 * 1024 * 1024, // 3MB
 			expectedLevel: WarningExcessive,
 			expectWarning: true,
 		},
@@ -154,7 +155,7 @@ func TestUpdateWarningLevel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewConfirmModel()
 			breakdown := SizeBreakdown{}
-			
+
 			model.SetEstimatedSize(tt.size, breakdown)
 
 			if model.warningLevel != tt.expectedLevel {

@@ -22,11 +22,11 @@ type GenerationConfig struct {
 
 // GeneratedPrompt contains the result of prompt generation with metadata
 type GeneratedPrompt struct {
-	Content       string
-	TemplateSize  int64
-	FileCount     int
-	TotalSize     int64
-	GeneratedAt   time.Time
+	Content      string
+	TemplateSize int64
+	FileCount    int
+	TotalSize    int64
+	GeneratedAt  time.Time
 }
 
 // GenerationProgressCallback is called during async generation to report progress
@@ -37,10 +37,10 @@ type GenerationStage string
 
 const (
 	StageProcessingTemplate  GenerationStage = "Processing template"
-	StageLoadingFiles       GenerationStage = "Loading file contents"
+	StageLoadingFiles        GenerationStage = "Loading file contents"
 	StageAssemblingStructure GenerationStage = "Assembling file structure"
-	StageWritingOutput      GenerationStage = "Writing output file"
-	StageComplete           GenerationStage = "Generation complete"
+	StageWritingOutput       GenerationStage = "Writing output file"
+	StageComplete            GenerationStage = "Generation complete"
 )
 
 // GenerationProgressMsg is sent during async generation
@@ -94,20 +94,20 @@ func (pg *PromptGenerator) GeneratePrompt(ctx context.Context, config Generation
 
 	// Step 1: Prepare variables for template processing
 	variables := make(map[string]string)
-	
+
 	// Copy provided variables
 	for k, v := range config.Variables {
 		variables[k] = v
 	}
-	
+
 	// Add required template variables
 	variables["TASK"] = config.TaskContent
 	variables["RULES"] = config.RulesContent
-	
+
 	// Add automatic variables
 	variables["CURRENT_DATE"] = time.Now().Format("2006-01-02")
 	variables["SELECTED_FILES_COUNT"] = fmt.Sprintf("%d", len(config.SelectedFiles))
-	
+
 	// Check context cancellation
 	select {
 	case <-ctx.Done():
@@ -124,7 +124,7 @@ func (pg *PromptGenerator) GeneratePrompt(ctx context.Context, config Generation
 		}
 		fileStructure = structure
 	}
-	
+
 	variables["FILE_STRUCTURE"] = fileStructure
 
 	// Check context cancellation
@@ -154,13 +154,13 @@ func (pg *PromptGenerator) GeneratePrompt(ctx context.Context, config Generation
 	// Step 5: Calculate metadata
 	templateSize := int64(len(config.Template.Content))
 	totalSize := int64(len(finalContent))
-	
+
 	result := &GeneratedPrompt{
-		Content:       finalContent,
-		TemplateSize:  templateSize,
-		FileCount:     len(config.SelectedFiles),
-		TotalSize:     totalSize,
-		GeneratedAt:   startTime,
+		Content:      finalContent,
+		TemplateSize: templateSize,
+		FileCount:    len(config.SelectedFiles),
+		TotalSize:    totalSize,
+		GeneratedAt:  startTime,
 	}
 
 	return result, nil
@@ -179,7 +179,7 @@ func (pg *PromptGenerator) GenerateAsync(config GenerationConfig, callback Gener
 
 		go func() {
 			defer close(done)
-			
+
 			// Report progress through callback if provided
 			if callback != nil {
 				callback(string(StageProcessingTemplate), 0.0)
@@ -190,7 +190,7 @@ func (pg *PromptGenerator) GenerateAsync(config GenerationConfig, callback Gener
 				callback(string(StageProcessingTemplate), 0.25)
 			}
 
-			// Step 2: File loading (50% progress)  
+			// Step 2: File loading (50% progress)
 			if callback != nil {
 				callback(string(StageLoadingFiles), 0.50)
 			}
@@ -228,4 +228,3 @@ func (pg *PromptGenerator) GenerateAsync(config GenerationConfig, callback Gener
 		}
 	})
 }
-

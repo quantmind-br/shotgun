@@ -521,8 +521,8 @@ Files: {{.FILE_STRUCTURE}}
 Date: {{.CURRENT_DATE}}
 Project: {{.PROJECT_NAME}}`,
 				Variables: map[string]models.Variable{
-					"TASK": {Name: "TASK", Required: true},
-					"RULES": {Name: "RULES", Default: "No rules"},
+					"TASK":           {Name: "TASK", Required: true},
+					"RULES":          {Name: "RULES", Default: "No rules"},
 					"FILE_STRUCTURE": {Name: "FILE_STRUCTURE", Default: "No files"},
 				},
 			},

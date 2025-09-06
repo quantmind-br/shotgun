@@ -1,6 +1,7 @@
 package template
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -88,7 +89,7 @@ func (m TemplateModel) renderError() string {
 		Render(strings.Join(content, "\n"))
 }
 
-// renderLoading renders the loading state
+// renderLoading renders the loading state with discovery spinner
 func (m TemplateModel) renderLoading() string {
 	var content []string
 
@@ -98,15 +99,27 @@ func (m TemplateModel) renderLoading() string {
 
 	content = append(content, header)
 
-	loading := loadingStyle.
-		Width(m.width).
-		Render("Loading templates...")
+	// Show discovery spinner if discovering, otherwise simple loading text
+	if m.discovering {
+		content = append(content, m.renderDiscoveryState())
+	} else {
+		loading := loadingStyle.
+			Width(m.width).
+			Render("Loading templates...")
+		content = append(content, loading)
+	}
 
-	content = append(content, loading)
+	// Show appropriate help text
+	var helpText string
+	if m.discovering {
+		helpText = "ESC: cancel discovery • Ctrl+C: quit"
+	} else {
+		helpText = "Press F2 to go back • Ctrl+C to quit"
+	}
 
 	help := helpStyle.
 		Width(m.width).
-		Render("Press F2 to go back • Ctrl+C to quit")
+		Render(helpText)
 
 	content = append(content, help)
 
@@ -114,6 +127,26 @@ func (m TemplateModel) renderLoading() string {
 		Width(m.width).
 		Height(m.height).
 		Render(strings.Join(content, "\n"))
+}
+
+// renderDiscoveryState shows the spinner and progress during template discovery
+func (m TemplateModel) renderDiscoveryState() string {
+	var message string
+	if m.foundCount > 0 {
+		message = fmt.Sprintf("Found %d templates", m.foundCount)
+		if m.currentPath != "" {
+			message += fmt.Sprintf(" (scanning %s)", m.currentPath)
+		}
+	} else {
+		message = "Discovering templates..."
+	}
+
+	m.spinner.SetMessage(message)
+	spinnerView := m.spinner.ViewWithCancel()
+
+	return loadingStyle.
+		Width(m.width).
+		Render(spinnerView)
 }
 
 // renderEmpty renders the empty state (no templates found)
