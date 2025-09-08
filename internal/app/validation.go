@@ -100,7 +100,8 @@ func (a *AppState) validateScreenData(screen ScreenType) error {
 
 	case ConfirmScreen:
 		// Validate that all required data is present
-		if len(a.SelectedFiles) == 0 {
+		// Use current FileTree selections if available
+		if len(a.SelectedFiles) == 0 && len(a.FileTree.GetSelectedFiles()) == 0 {
 			return errors.New("no files selected")
 		}
 		if a.SelectedTemplate == nil {

@@ -60,11 +60,11 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 		// Handle clipboard operation errors
 		m.SetError(msg.Error)
 
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+enter":
-			// Validate content and advance if valid
-			if m.CanAdvance() {
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+enter":
+            // Validate content and advance if valid
+            if m.CanAdvance() {
 				// Clear any previous errors
 				m.SetError(nil)
 				// Send message to advance to next screen
@@ -76,25 +76,11 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 				m.SetError(errors.New("task description cannot be empty"))
 			}
 
-		case "f3":
-			// F3 advances only if content is non-empty
-			if m.CanAdvance() {
-				// Clear any previous errors
-				m.SetError(nil)
-				// Send message to advance to next screen
-				cmds = append(cmds, func() tea.Msg {
-					return TaskInputMsg{}
-				})
-			} else {
-				// Set validation error - content is empty
-				m.SetError(errors.New("task description cannot be empty"))
-			}
-
-		case "f2":
-			// Return to template screen with state preservation
-			cmds = append(cmds, func() tea.Msg {
-				return BackToTemplateMsg{}
-			})
+        case "ctrl+left":
+            // Return to template screen with state preservation
+            cmds = append(cmds, func() tea.Msg {
+                return BackToTemplateMsg{}
+            })
 
 		case "ctrl+c":
 			// Copy selected text to clipboard
@@ -131,5 +117,7 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 		m.updateCounters()
 	}
 
-	return m, tea.Batch(cmds...)
+    return m, tea.Batch(cmds...)
 }
+
+// (No enhanced key handler required on Bubble Tea v1.x)

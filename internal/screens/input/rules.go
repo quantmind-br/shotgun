@@ -181,28 +181,27 @@ func (m RulesInputModel) Update(msg tea.Msg) (RulesInputModel, tea.Cmd) {
 		// Handle clipboard operation errors
 		m.SetError(msg.Error)
 
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "f4":
-			// F4 skips rules screen entirely
-			cmds = append(cmds, func() tea.Msg {
-				return SkipRulesMsg{}
-			})
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+shift+enter":
+            // Skip rules screen entirely
+            cmds = append(cmds, func() tea.Msg {
+                return SkipRulesMsg{}
+            })
 
-		case "f3":
-			// F3 advances regardless of content (rules are optional)
-			// Clear any previous errors
-			m.SetError(nil)
-			// Send message to advance to confirmation screen
-			cmds = append(cmds, func() tea.Msg {
-				return RulesInputMsg{}
-			})
+        case "ctrl+enter":
+            // Advance regardless of content (rules are optional)
+            // Clear any previous errors
+            m.SetError(nil)
+            cmds = append(cmds, func() tea.Msg {
+                return RulesInputMsg{}
+            })
 
-		case "f2":
-			// Return to task screen with state preservation
-			cmds = append(cmds, func() tea.Msg {
-				return BackToTaskMsg{}
-			})
+        case "ctrl+left":
+            // Return to task screen with state preservation
+            cmds = append(cmds, func() tea.Msg {
+                return BackToTaskMsg{}
+            })
 
 		case "ctrl+c":
 			// Copy selected text to clipboard
@@ -230,10 +229,10 @@ func (m RulesInputModel) Update(msg tea.Msg) (RulesInputModel, tea.Cmd) {
 			m.updateCounters()
 		}
 
-	default:
-		// Update textarea with other messages
-		m.textarea, cmd = m.textarea.Update(msg)
-		cmds = append(cmds, cmd)
+    default:
+        // Update textarea with other messages
+        m.textarea, cmd = m.textarea.Update(msg)
+        cmds = append(cmds, cmd)
 
 		// Update counters after potential text changes
 		m.updateCounters()
@@ -285,13 +284,13 @@ func (m RulesInputModel) renderMain() string {
 	countDisplay := countStyle.Width(m.width - 4).Render(countText)
 	sections = append(sections, countDisplay)
 
-	// Help text for keyboard shortcuts
-	helpText := []string{
-		"F3: Continue to confirmation",
-		"F4: Skip this screen entirely",
-		"F2: Back to Task Description",
-		"Ctrl+C: Copy • Ctrl+V: Paste",
-	}
+    // Help text for keyboard shortcuts
+    helpText := []string{
+        "Ctrl+Enter: Continue to confirmation",
+        "Ctrl+Shift+Enter: Skip this screen",
+        "Ctrl+Left: Back to Task Description",
+        "Ctrl+C: Copy • Ctrl+V: Paste",
+    }
 	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 
@@ -311,7 +310,7 @@ func (m RulesInputModel) renderError() string {
 	sections = append(sections, errorMsg)
 
 	// Instructions
-	instruction := instructionStyle.Width(m.width).Render("Please try again or press F2 to go back.")
+    instruction := instructionStyle.Width(m.width).Render("Please try again or press Ctrl+Left to go back.")
 	sections = append(sections, instruction)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -340,10 +339,11 @@ func (m *RulesInputModel) updateCounters() {
 
 // Focused returns true if the textarea is currently focused for text input
 func (r RulesInputModel) Focused() bool {
-	return r.textarea.Focused()
+    return r.textarea.Focused()
 }
 
 // Blur removes focus from the textarea
 func (r *RulesInputModel) Blur() {
-	r.textarea.Blur()
+    r.textarea.Blur()
 }
+ 

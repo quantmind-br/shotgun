@@ -261,12 +261,11 @@ func (m ConfirmModel) renderWarningSection() string {
 
 // renderNavigationHelp renders keyboard navigation instructions
 func (m ConfirmModel) renderNavigationHelp() string {
-	help := []string{
-		"F10: Confirm and generate prompt",
-		"F2: Return to rules input",
-		"F1: Return to file selection",
-		"Esc: Exit application",
-	}
+    help := []string{
+        "Ctrl+Enter: Confirm and generate prompt",
+        "Ctrl+Left: Return to rules input",
+        "Ctrl+Q/ESC: Exit",
+    }
 
 	if m.viewport.TotalLineCount() > m.viewport.Height {
 		help = append(help, "↑/↓: Scroll content")

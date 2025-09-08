@@ -12,11 +12,14 @@ import (
 
 // Init implements tea.Model interface
 func (a *AppState) Init() tea.Cmd {
-	// Initialize the first screen (FileTree)
-	return tea.Batch(
-		a.InitScreenCmd(),
-		a.FileTree.Init(),
-	)
+    // Initialize the first screen (FileTree)
+    return tea.Batch(
+        a.InitScreenCmd(),
+        a.FileTree.Init(),
+        // Auto-start file scanning for the initial screen
+        a.FileTree.StartScanning(),
+        a.FileTree.LoadFromScanner(a.ctx, "."),
+    )
 }
 
 // Update implements tea.Model interface
@@ -37,10 +40,19 @@ func (a *AppState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a.handleExitDialog(msg)
 		}
 
-		// Check for global keys first
-		if IsGlobalKey(msg.String()) {
-			return a.GlobalKeyHandler(msg)
-		}
+    // Check for global keys (robust to platform-specific key types)
+    if IsGlobalKey(normalizeKey(msg)) || isFunctionKeyMsg(msg) {
+        return a.GlobalKeyHandler(msg)
+    }
+
+    // Screen-specific shortcuts (non-text screens can also use plain Enter)
+    // FileTree: Ctrl+Enter (and Enter on some terminals) advances if files are selected
+    if a.CurrentScreen == FileTreeScreen && (normalizeKey(msg) == "ctrl+enter" || normalizeKey(msg) == "enter") {
+        if a.canGoToNextScreen() {
+            return a.goToNextScreen()
+        }
+        return a, nil
+    }
 
 		// Let current screen handle the key
 		return a.handleScreenInput(msg)

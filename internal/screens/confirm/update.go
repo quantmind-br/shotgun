@@ -17,32 +17,26 @@ func (m ConfirmModel) Update(msg tea.Msg) (ConfirmModel, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.UpdateWindowSize(msg.Width, msg.Height)
 
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "f10":
-			// Confirm and trigger generation
-			if !m.calculating && m.estimatedSize > 0 {
-				return m, ConfirmGenerationCmd()
-			}
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+enter", "enter":
+            // Confirm and trigger generation
+            if !m.calculating && m.estimatedSize > 0 {
+                return m, ConfirmGenerationCmd()
+            }
 
-		case "f2":
-			// Return to rules input screen
-			if !m.calculating {
-				return m, NavigateToRulesCmd()
-			}
+        case "ctrl+left":
+            // Return to rules input screen
+            if !m.calculating {
+                return m, NavigateToRulesCmd()
+            }
 
-		case "f1":
-			// Return to file selection screen
-			if !m.calculating {
-				return m, NavigateToFileTreeCmd()
-			}
-
-		case "esc":
-			// Cancel calculation if running, otherwise exit
-			if m.calculating {
-				return m, CancelSizeCalculationCmd()
-			}
-			return m, NavigateToExitCmd()
+        case "esc":
+            // Cancel calculation if running, otherwise exit
+            if m.calculating {
+                return m, CancelSizeCalculationCmd()
+            }
+            return m, NavigateToExitCmd()
 
 		case "up", "k":
 			// Scroll viewport up
@@ -69,7 +63,7 @@ func (m ConfirmModel) Update(msg tea.Msg) (ConfirmModel, tea.Cmd) {
 			m.viewport.GotoBottom()
 		}
 
-	case ProgressMsg:
+    case ProgressMsg:
 		// Update progress state via the ProgressManager
 		if m.calculating && m.progressMgr != nil {
 			progressCmd := m.progressMgr.UpdateProgress(msg.Processed, msg.CurrentFile)

@@ -209,12 +209,12 @@ func (m FileTreeModel) statusBar() string {
 // helpBar renders the help/navigation bar
 func (m FileTreeModel) helpBar() string {
 	var help string
-	if m.scanning {
-		help = "ESC: cancel scanning │ q: quit"
-	} else {
-		help = "↑/↓ or k/j: navigate │ ←/→ or h/l: expand/collapse │ space: toggle │ F3: continue │ q: quit"
-	}
-	return helpStyle.Render(help)
+    if m.scanning {
+        help = "ESC: cancel scanning │ Ctrl+Q: quit"
+    } else {
+        help = "↑/↓ or k/j: navigate │ ←/→ or h/l: expand/collapse │ space: toggle │ Ctrl+Enter: continue │ Ctrl+Q: quit"
+    }
+    return helpStyle.Render(help)
 }
 
 // calculateCounts calculates file count statistics

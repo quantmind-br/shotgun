@@ -1,43 +1,41 @@
 package app
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/diogopedro/shotgun/internal/components/help"
+    "strings"
+
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/diogopedro/shotgun/internal/components/help"
 )
 
 // GlobalKeyHandler processes global navigation keys
 func (a *AppState) GlobalKeyHandler(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Skip global keys during text editing except ESC
-	if a.isInInputMode() && msg.String() != "esc" {
-		return nil, nil
-	}
+    key := normalizeKey(msg)
 
-	switch msg.String() {
-	case "f1":
-		return a.showHelp()
-	case "f2":
-		if a.canGoToPreviousScreen() {
-			return a.goToPreviousScreen()
-		}
-	case "f3":
-		if a.canGoToNextScreen() {
-			return a.goToNextScreen()
-		}
-	case "f4":
-		return a.handleF4Action()
-	case "f10":
-		return a.handleF10Generate()
-	case "esc":
-		return a.showExitDialog()
-	case "q", "ctrl+c":
-		return a.showExitDialog()
-	default:
-		// Key not handled globally, let current screen handle it
-		return nil, nil
-	}
+    // In input mode, allow only safe global combos: ESC and Ctrl+Q
+    if a.isInInputMode() && key != "esc" && key != "ctrl+q" && key != "ctrl+c" {
+        return nil, nil
+    }
 
-	// Return current state if navigation not allowed
-	return a, nil
+    switch key {
+    case "ctrl+h":
+        return a.showHelp()
+    case "ctrl+left":
+        if a.canGoToPreviousScreen() {
+            return a.goToPreviousScreen()
+        }
+    case "ctrl+enter":
+        if a.canGoToNextScreen() {
+            return a.goToNextScreen()
+        }
+    case "ctrl+q", "esc", "ctrl+c":
+        return a.showExitDialog()
+    default:
+        // Key not handled globally, let current screen handle it
+        return nil, nil
+    }
+
+    // Return current state if navigation not allowed
+    return a, nil
 }
 
 // showHelp displays contextual help for the current screen
@@ -113,9 +111,9 @@ func (a *AppState) showExitDialog() (tea.Model, tea.Cmd) {
 
 // getHelpContent returns contextual help content for current screen
 func (a *AppState) getHelpContent() string {
-	switch a.CurrentScreen {
-	case FileTreeScreen:
-		return `File Tree Navigation Help:
+    switch a.CurrentScreen {
+    case FileTreeScreen:
+        return `File Tree Navigation Help:
 
 Navigation:
 • ↑/↓ or k/j: Move cursor up/down
@@ -123,35 +121,35 @@ Navigation:
 • Space: Toggle file/directory selection
 
 Global Keys:
-• F1: Show this help
-• F2: Go to previous screen (disabled on first screen)
-• F3: Go to next screen (requires selected files)
-• ESC/q: Exit application
+• Ctrl+H: Show this help
+• Ctrl+Left: Go to previous screen (disabled on first screen)
+• Ctrl+Enter: Go to next screen (requires selected files)
+• Ctrl+Q/ESC: Exit application
 
 File Selection:
 • Select files and directories you want to include
 • Binary files are automatically excluded
 • At least one file must be selected to continue`
 
-	case TemplateScreen:
-		return `Template Selection Help:
+    case TemplateScreen:
+        return `Template Selection Help:
 
 Navigation:
 • ↑/↓ or k/j: Move cursor up/down
 • Enter/Space: Select template
 
 Global Keys:
-• F1: Show this help
-• F2: Go to previous screen
-• F3: Go to next screen (requires selected template)
-• ESC/q: Exit application
+• Ctrl+H: Show this help
+• Ctrl+Left: Go to previous screen
+• Ctrl+Enter: Go to next screen (requires selected template)
+• Ctrl+Q/ESC: Exit application
 
 Template Types:
 • Choose a template that matches your task
 • Templates provide structured prompts for AI generation`
 
-	case TaskScreen:
-		return `Task Input Help:
+    case TaskScreen:
+        return `Task Input Help:
 
 Input:
 • Type your task description
@@ -159,17 +157,17 @@ Input:
 • Include any special requirements or constraints
 
 Global Keys:
-• F1: Show this help
-• F2: Go to previous screen
-• F3: Go to next screen (requires task description)
-• ESC/q: Exit application
+• Ctrl+H: Show this help
+• Ctrl+Left: Go to previous screen
+• Ctrl+Enter: Go to next screen (requires task description)
+• Ctrl+Q/ESC: Exit application
 
 Tips:
 • Describe your goal clearly
 • Mention specific technologies or patterns if relevant`
 
-	case RulesScreen:
-		return `Rules Input Help:
+    case RulesScreen:
+        return `Rules Input Help:
 
 Input:
 • Add custom rules or constraints (optional)
@@ -177,18 +175,18 @@ Input:
 • Add any special requirements
 
 Global Keys:
-• F1: Show this help
-• F2: Go to previous screen
-• F3: Go to next screen (rules are optional)
-• ESC/q: Exit application
+• Ctrl+H: Show this help
+• Ctrl+Left: Go to previous screen
+• Ctrl+Enter: Go to next screen (rules are optional)
+• Ctrl+Q/ESC: Exit application
 
 Examples:
 • "Use TypeScript strict mode"
 • "Follow REST API conventions"
 • "Include comprehensive error handling"`
 
-	case ConfirmScreen:
-		return `Confirmation Help:
+    case ConfirmScreen:
+        return `Confirmation Help:
 
 Review:
 • Review all your selections and inputs
@@ -196,13 +194,13 @@ Review:
 • Make changes using F2 to go back if needed
 
 Global Keys:
-• F1: Show this help
-• F2: Go to previous screen
-• F3: Generate output
-• ESC/q: Exit application
+• Ctrl+H: Show this help
+• Ctrl+Left: Go to previous screen
+• Ctrl+Enter: Generate output
+• Ctrl+Q/ESC: Exit application
 
 Action:
-• Press F3 to generate the final output
+• Press Ctrl+Enter to generate the final output
 • The application will create your prompt based on all inputs`
 
 	default:
@@ -212,13 +210,26 @@ Action:
 
 // IsGlobalKey checks if a key should be handled globally
 func IsGlobalKey(key string) bool {
-	globalKeys := []string{"f1", "f2", "f3", "f4", "f10", "esc", "q", "ctrl+c"}
-	for _, gk := range globalKeys {
-		if key == gk {
-			return true
-		}
-	}
-	return false
+    // Note: ctrl+enter is handled per-screen (e.g., FileTree, Confirm)
+    globalKeys := []string{"ctrl+h", "ctrl+left", "ctrl+q", "esc", "ctrl+c"}
+    for _, gk := range globalKeys {
+        if key == gk {
+            return true
+        }
+    }
+    return false
+}
+
+// isFunctionKeyMsg returns true if msg.Type is one of the function keys we handle
+func isFunctionKeyMsg(msg tea.KeyMsg) bool { return false }
+
+// normalizeKey maps tea.KeyMsg to a stable string used by handlers
+func normalizeKey(msg tea.KeyMsg) string {
+    switch msg.Type {
+    case tea.KeyEsc:
+        return "esc"
+    }
+    return strings.ToLower(msg.String())
 }
 
 // isInInputMode checks if user is currently editing text
@@ -255,9 +266,10 @@ func (a *AppState) canGoToPreviousScreen() bool {
 
 // canGoToNextScreen validates if forward navigation is allowed
 func (a *AppState) canGoToNextScreen() bool {
-	switch a.CurrentScreen {
-	case FileTreeScreen:
-		return len(a.SelectedFiles) > 0
+    switch a.CurrentScreen {
+    case FileTreeScreen:
+        // Derive directly from the FileTree model to reflect live selections
+        return len(a.FileTree.GetSelectedFiles()) > 0
 	case TemplateScreen:
 		return a.SelectedTemplate != nil
 	case TaskScreen:

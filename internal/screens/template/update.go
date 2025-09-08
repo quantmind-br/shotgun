@@ -27,7 +27,7 @@ func (m TemplateModel) Update(msg tea.Msg) (TemplateModel, tea.Cmd) {
 		m.foundCount = msg.Found
 		m.currentPath = msg.Path
 
-	case tea.KeyMsg:
+    case tea.KeyMsg:
 		// Handle ESC during discovery
 		if m.discovering && msg.String() == "esc" {
 			m.StopDiscovery()
@@ -65,19 +65,19 @@ func (m TemplateModel) Update(msg tea.Msg) (TemplateModel, tea.Cmd) {
 				}
 			}
 
-		case "enter", "f3":
-			// Select template and advance to next screen
-			if m.selected != nil {
-				cmds = append(cmds, func() tea.Msg {
-					return TemplateSelectedMsg{Template: m.selected}
-				})
-			}
+        case "enter":
+            // Select template and advance to next screen
+            if m.selected != nil {
+                cmds = append(cmds, func() tea.Msg {
+                    return TemplateSelectedMsg{Template: m.selected}
+                })
+            }
 
-		case "f2":
-			// Return to file tree screen
-			cmds = append(cmds, func() tea.Msg {
-				return BackToFileTreeMsg{}
-			})
+        case "ctrl+left":
+            // Return to file tree screen
+            cmds = append(cmds, func() tea.Msg {
+                return BackToFileTreeMsg{}
+            })
 
 		case "pgup":
 			// Page up
@@ -138,17 +138,17 @@ func (m TemplateModel) Update(msg tea.Msg) (TemplateModel, tea.Cmd) {
 			m.showDetails = !m.showDetails
 			m.UpdateSize(m.width, m.height) // Recalculate layout
 
-		default:
-			// Let the list handle other keys
-			m.list, cmd = m.list.Update(msg)
-			cmds = append(cmds, cmd)
-		}
+        default:
+            // Let the list handle other keys
+            m.list, cmd = m.list.Update(msg)
+            cmds = append(cmds, cmd)
+        }
 
-	default:
-		// Update list with other messages
-		m.list, cmd = m.list.Update(msg)
-		cmds = append(cmds, cmd)
-	}
+    default:
+        // Update list with other messages
+        m.list, cmd = m.list.Update(msg)
+        cmds = append(cmds, cmd)
+    }
 
 	// Update spinner if discovering
 	if m.discovering {
