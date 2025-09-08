@@ -26,17 +26,17 @@ func (m GenerateModel) Update(msg tea.Msg) (GenerateModel, tea.Cmd) {
 			// Exit generation screen
 			return m, NavigateBackCmd()
 
-		case "f1":
+		case "ctrl+s":
 			// Return to file tree screen for restart
 			return m, NavigateToFileTreeCmd()
 
-		case "f2":
+		case "ctrl+o":
 			if m.completed && !m.HasError() && m.outputFile != "" {
 				// Open generated file in system default application
 				return m, OpenFileCmd(m.outputFile)
 			}
 
-		case "f5":
+		case "ctrl+r":
 			if m.HasError() {
 				// Retry generation
 				return m, RetryGenerationCmd()

@@ -108,8 +108,7 @@ func TestTaskInputModel_ViewKeyboardShortcuts(t *testing.T) {
 
 	shortcuts := []string{
 		"Ctrl+Enter",
-		"F3:",
-		"F2:",
+		"Ctrl+Left:",
 		"Ctrl+C:",
 		"Ctrl+V:",
 	}

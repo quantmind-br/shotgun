@@ -104,7 +104,7 @@ func TestDiscoveryHelpText(t *testing.T) {
 
 	// Normal loading (not discovering)
 	view := model.View()
-	if !strings.Contains(view, "Press F2 to go back") {
+	if !strings.Contains(view, "Press Ctrl+Left to go back") {
 		t.Error("Normal loading should show back option")
 	}
 
@@ -115,7 +115,7 @@ func TestDiscoveryHelpText(t *testing.T) {
 		t.Error("Discovery view should show ESC cancellation")
 	}
 
-	if strings.Contains(discoveryView, "Press F2 to go back") {
+	if strings.Contains(discoveryView, "Press Ctrl+Left to go back") {
 		t.Error("Discovery view should not show back option")
 	}
 }

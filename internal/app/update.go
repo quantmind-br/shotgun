@@ -118,8 +118,11 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case template.BackToFileTreeMsg:
 			a.SetCurrentScreen(FileTreeScreen)
 		case template.RefreshTemplatesMsg:
-			// Handle template refresh - would need template service
-			// cmds = append(cmds, template.RefreshTemplatesCmd(a.templateService, a.ctx))
+			// Refresh templates via service with discovery spinner
+			cmds = append(cmds,
+				a.Template.StartDiscovery(),
+				template.RefreshTemplatesCmd(a.templateService, a.ctx),
+			)
 		}
 
 	case TaskScreen:

@@ -42,7 +42,7 @@ func TestTemplateModel_View_ErrorState(t *testing.T) {
 		t.Error("expected view to contain specific error details")
 	}
 
-	if !strings.Contains(view, "F2 to go back") {
+	if !strings.Contains(view, "Ctrl+Left to go back") {
 		t.Error("expected view to contain help text for error state")
 	}
 }

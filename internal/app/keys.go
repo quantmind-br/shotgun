@@ -5,6 +5,7 @@ import (
 
     tea "github.com/charmbracelet/bubbletea"
     "github.com/diogopedro/shotgun/internal/components/help"
+    screenTpl "github.com/diogopedro/shotgun/internal/screens/template"
 )
 
 // GlobalKeyHandler processes global navigation keys
@@ -85,21 +86,26 @@ func (a *AppState) goToNextScreen() (tea.Model, tea.Cmd) {
 	a.Error = nil
 
 	// Navigate to next screen
-	switch a.CurrentScreen {
-	case FileTreeScreen:
-		a.SetCurrentScreen(TemplateScreen)
-	case TemplateScreen:
-		a.SetCurrentScreen(TaskScreen)
-	case TaskScreen:
-		a.SetCurrentScreen(RulesScreen)
-	case RulesScreen:
-		a.SetCurrentScreen(ConfirmScreen)
-	case ConfirmScreen:
-		// Use F10 for generation from confirmation screen
-		return a, nil
-	}
+    switch a.CurrentScreen {
+    case FileTreeScreen:
+        a.SetCurrentScreen(TemplateScreen)
+        // Kick off template discovery/loading when entering Template screen
+        return a, tea.Batch(
+            a.Template.StartDiscovery(),
+            screenTpl.LoadTemplatesCmd(a.templateService, a.ctx),
+        )
+    case TemplateScreen:
+        a.SetCurrentScreen(TaskScreen)
+    case TaskScreen:
+        a.SetCurrentScreen(RulesScreen)
+    case RulesScreen:
+        a.SetCurrentScreen(ConfirmScreen)
+    case ConfirmScreen:
+        // Use F10 for generation from confirmation screen
+        return a, nil
+    }
 
-	return a, nil
+    return a, nil
 }
 
 // showExitDialog shows exit confirmation dialog

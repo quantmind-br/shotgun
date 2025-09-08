@@ -333,7 +333,7 @@ func TestHelpBar(t *testing.T) {
 	help := model.helpBar()
 
 	// Should contain key navigation hints
-	expectedKeys := []string{"↑/↓", "k/j", "←/→", "h/l", "space", "F3", "q"}
+	expectedKeys := []string{"↑/↓", "k/j", "←/→", "h/l", "space", "Ctrl+Enter", "Ctrl+Q"}
 
 	for _, key := range expectedKeys {
 		if !strings.Contains(help, key) {

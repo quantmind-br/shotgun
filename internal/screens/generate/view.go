@@ -190,12 +190,12 @@ func (m GenerateModel) renderFooter() string {
 		keys = append(keys, "Esc: Cancel")
 	} else if m.completed {
 		if m.HasError() {
-			keys = append(keys, "F5: Retry", "F1: Start over", "Esc: Exit")
+			keys = append(keys, "Ctrl+R: Retry", "Ctrl+S: Start over", "Esc: Exit")
 		} else {
 			if m.outputFile != "" {
-				keys = append(keys, "F2: Open file")
+				keys = append(keys, "Ctrl+O: Open file")
 			}
-			keys = append(keys, "F1: Start over", "Esc: Exit")
+			keys = append(keys, "Ctrl+S: Start over", "Esc: Exit")
 		}
 		if m.showStats {
 			keys = append(keys, "s: Hide stats")
@@ -203,7 +203,7 @@ func (m GenerateModel) renderFooter() string {
 			keys = append(keys, "s: Show stats")
 		}
 	} else {
-		keys = append(keys, "F1: Start over", "Esc: Exit")
+		keys = append(keys, "Ctrl+S: Start over", "Esc: Exit")
 	}
 
 	return infoStyle.Render(strings.Join(keys, "  "))

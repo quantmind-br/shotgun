@@ -1,10 +1,10 @@
 package app
 
 import (
-	"context"
+    "context"
 
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+    "github.com/charmbracelet/bubbles/viewport"
+    tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/diogopedro/shotgun/internal/components/help"
 	"github.com/diogopedro/shotgun/internal/components/progress"
@@ -13,7 +13,8 @@ import (
 	"github.com/diogopedro/shotgun/internal/screens/filetree"
 	"github.com/diogopedro/shotgun/internal/screens/generate"
 	"github.com/diogopedro/shotgun/internal/screens/input"
-	"github.com/diogopedro/shotgun/internal/screens/template"
+    "github.com/diogopedro/shotgun/internal/screens/template"
+    tmplcore "github.com/diogopedro/shotgun/internal/core/template"
 )
 
 // ScreenType represents the different screens in the wizard
@@ -108,9 +109,12 @@ type AppState struct {
 	// Input mode tracking
 	InputMode bool
 
-	// Context for cancellation
-	ctx    context.Context
-	cancel context.CancelFunc
+    // Context for cancellation
+    ctx    context.Context
+    cancel context.CancelFunc
+
+    // Services
+    templateService tmplcore.TemplateService
 }
 
 // NewApp creates a new application state with default values
@@ -127,8 +131,8 @@ func NewApp() *AppState {
 		"Generate Prompt",
 	}
 
-	app := &AppState{
-		CurrentScreen:    FileTreeScreen,
+    app := &AppState{
+        CurrentScreen:    FileTreeScreen,
 		SelectedFiles:    make([]string, 0),
 		SelectedTemplate: nil,
 		TaskContent:      "",
@@ -136,9 +140,9 @@ func NewApp() *AppState {
 		ShowingHelp:      false,
 		HelpContent:      "",
 		ShowingExit:      false,
-		ctx:              ctx,
-		cancel:           cancel,
-	}
+        ctx:              ctx,
+        cancel:           cancel,
+    }
 
 	// Initialize screen models with defaults
 	app.FileTree = filetree.NewFileTreeModel()
@@ -146,7 +150,10 @@ func NewApp() *AppState {
 	app.TaskInput = input.NewTaskInputModel()
 	app.RulesInput = input.NewRulesInputModel()
 	app.Confirmation = confirm.NewConfirmModel()
-	app.Generation = generate.NewGenerateModel()
+    app.Generation = generate.NewGenerateModel()
+
+    // Initialize services
+    app.templateService = tmplcore.NewTemplateService(nil)
 
 	// Initialize progress indicator
 	app.Progress = progress.NewModel(1, 6, screenTitles)

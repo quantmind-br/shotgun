@@ -79,7 +79,7 @@ func (m TemplateModel) renderError() string {
 
 	help := helpStyle.
 		Width(m.width).
-		Render("Press F2 to go back • Ctrl+R to retry • Ctrl+C to quit")
+		Render("Press Ctrl+Left to go back • Ctrl+R to retry • Ctrl+C to quit")
 
 	content = append(content, help)
 
@@ -114,7 +114,7 @@ func (m TemplateModel) renderLoading() string {
 	if m.discovering {
 		helpText = "ESC: cancel discovery • Ctrl+C: quit"
 	} else {
-		helpText = "Press F2 to go back • Ctrl+C to quit"
+		helpText = "Press Ctrl+Left to go back • Ctrl+C to quit"
 	}
 
 	help := helpStyle.
@@ -167,7 +167,7 @@ func (m TemplateModel) renderEmpty() string {
 
 	help := helpStyle.
 		Width(m.width).
-		Render("Press F2 to go back • Ctrl+R to refresh • Ctrl+C to quit")
+		Render("Press Ctrl+Left to go back • Ctrl+R to refresh • Ctrl+C to quit")
 
 	content = append(content, help)
 
