@@ -263,12 +263,12 @@ func TestTaskInputModel_UpdateRegularKeyIntegration(t *testing.T) {
 	_ = cmd
 }
 
-func TestTaskInputModel_UpdateF3Valid(t *testing.T) {
+func TestTaskInputModel_UpdateAltCValid(t *testing.T) {
 	model := NewTaskInputModel()
 
-	// Test F3 with valid content
+	// Test Alt+C with valid content
 	model.SetContent("Valid content")
-	keyMsg := tea.KeyMsg{Type: tea.KeyF3}
+	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("c"), Alt: true}
 
 	updatedModel, cmd := model.Update(keyMsg)
 
@@ -277,21 +277,21 @@ func TestTaskInputModel_UpdateF3Valid(t *testing.T) {
 	}
 
 	if cmd == nil {
-		t.Error("expected command for F3 with valid content")
+		t.Error("expected command for Alt+C with valid content")
 	}
 }
 
-func TestTaskInputModel_UpdateF3Empty(t *testing.T) {
+func TestTaskInputModel_UpdateAltCEmpty(t *testing.T) {
 	model := NewTaskInputModel()
 
-	// Test F3 with empty content
+	// Test Alt+C with empty content
 	model.SetContent("")
-	keyMsg := tea.KeyMsg{Type: tea.KeyF3}
+	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("c"), Alt: true}
 
 	updatedModel, cmd := model.Update(keyMsg)
 
 	if updatedModel.GetError() == nil {
-		t.Error("expected error for empty content with F3")
+		t.Error("expected error for empty content with Alt+C")
 	}
 
 	if updatedModel.GetError().Error() != "task description cannot be empty" {
@@ -301,17 +301,17 @@ func TestTaskInputModel_UpdateF3Empty(t *testing.T) {
 	_ = cmd // Avoid unused variable
 }
 
-func TestTaskInputModel_UpdateF2Navigation(t *testing.T) {
+func TestTaskInputModel_UpdateCtrlLeftNavigation(t *testing.T) {
 	model := NewTaskInputModel()
 	model.SetContent("Some content to preserve")
 
-	keyMsg := tea.KeyMsg{Type: tea.KeyF2}
+	keyMsg := tea.KeyMsg{Type: tea.KeyCtrlLeft}
 
 	updatedModel, cmd := model.Update(keyMsg)
 
 	// Content should be preserved
 	if updatedModel.GetContent() != "Some content to preserve" {
-		t.Error("expected content to be preserved during F2 navigation")
+		t.Error("expected content to be preserved during Ctrl+Left navigation")
 	}
 
 	// Should return a command
@@ -361,7 +361,7 @@ func TestTaskInputModel_UpdateKeyMessageHandling(t *testing.T) {
 
 	model := NewTaskInputModel()
 
-	// Test the advancement validation logic that ctrl+enter and f3 use
+	// Test the advancement validation logic that alt+c and f3 use
 	t.Run("advancement_logic_valid_content", func(t *testing.T) {
 		model.SetContent("Valid task description")
 

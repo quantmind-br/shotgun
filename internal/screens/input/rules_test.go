@@ -162,31 +162,31 @@ func TestRulesInputModel_UpdateSize(t *testing.T) {
 func TestRulesInputModel_KeyboardNavigation(t *testing.T) {
 	model := NewRulesInputModel()
 
-	// Test F3 key (advance)
-	keyMsg := tea.KeyMsg{Type: tea.KeyF3}
+	// Test Alt+C key (advance)
+	keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("c"), Alt: true}
 	updatedModel, cmd := model.Update(keyMsg)
 
 	if cmd == nil {
-		t.Error("Expected command to be returned for F3 key")
+		t.Error("Expected command to be returned for Alt+C key")
 	}
 
 	// The model should be returned (not modified for this key)
 	_ = updatedModel
 
-	// Test F4 key (skip)
-	keyMsg = tea.KeyMsg{Type: tea.KeyF4}
+	// Test Alt+S key (skip)
+	keyMsg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s"), Alt: true}
 	updatedModel, cmd = model.Update(keyMsg)
 
 	if cmd == nil {
-		t.Error("Expected command to be returned for F4 key")
+		t.Error("Expected command to be returned for Alt+S key")
 	}
 
-	// Test F2 key (back)
-	keyMsg = tea.KeyMsg{Type: tea.KeyF2}
+	// Test Ctrl+Left key (back)
+	keyMsg = tea.KeyMsg{Type: tea.KeyCtrlLeft}
 	updatedModel, cmd = model.Update(keyMsg)
 
 	if cmd == nil {
-		t.Error("Expected command to be returned for F2 key")
+		t.Error("Expected command to be returned for Ctrl+Left key")
 	}
 }
 
