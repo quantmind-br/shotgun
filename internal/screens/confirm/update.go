@@ -2,9 +2,10 @@ package confirm
 
 import (
 	"context"
-	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/diogopedro/shotgun/internal/core/builder"
+	"github.com/diogopedro/shotgun/internal/core/template"
 	"github.com/diogopedro/shotgun/internal/models"
 )
 
@@ -17,26 +18,26 @@ func (m ConfirmModel) Update(msg tea.Msg) (ConfirmModel, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.UpdateWindowSize(msg.Width, msg.Height)
 
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "ctrl+enter", "enter":
-            // Confirm and trigger generation
-            if !m.calculating && m.estimatedSize > 0 {
-                return m, ConfirmGenerationCmd()
-            }
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "alt+c", "enter":
+			// Confirm and trigger generation
+			if !m.calculating {
+				return m, ConfirmGenerationCmd()
+			}
 
-        case "ctrl+left":
-            // Return to rules input screen
-            if !m.calculating {
-                return m, NavigateToRulesCmd()
-            }
+		case "ctrl+left":
+			// Return to rules input screen
+			if !m.calculating {
+				return m, NavigateToRulesCmd()
+			}
 
-        case "esc":
-            // Cancel calculation if running, otherwise exit
-            if m.calculating {
-                return m, CancelSizeCalculationCmd()
-            }
-            return m, NavigateToExitCmd()
+		case "esc":
+			// Cancel calculation if running, otherwise exit
+			if m.calculating {
+				return m, CancelSizeCalculationCmd()
+			}
+			return m, NavigateToExitCmd()
 
 		case "up", "k":
 			// Scroll viewport up
@@ -63,7 +64,7 @@ func (m ConfirmModel) Update(msg tea.Msg) (ConfirmModel, tea.Cmd) {
 			m.viewport.GotoBottom()
 		}
 
-    case ProgressMsg:
+	case ProgressMsg:
 		// Update progress state via the ProgressManager
 		if m.calculating && m.progressMgr != nil {
 			progressCmd := m.progressMgr.UpdateProgress(msg.Processed, msg.CurrentFile)
@@ -211,70 +212,60 @@ func CalculateSizeWithProgressCmd(ctx context.Context, selectedFiles []string, t
 	)
 }
 
+// templateEngineAdapter adapts the template engine to the builder interface
+type templateEngineAdapter struct {
+	engine template.TemplateEngine
+}
+
+// ProcessTemplate adapts the template processing interface
+func (a *templateEngineAdapter) ProcessTemplate(tmpl *models.Template, variables map[string]string) (string, error) {
+	// Convert string map to interface{} map
+	vars := make(map[string]interface{})
+	for k, v := range variables {
+		vars[k] = v
+	}
+	return a.engine.ProcessTemplate(context.Background(), tmpl, vars)
+}
+
 // calculateSizeWithProgress performs the actual size calculation with progress updates
-func calculateSizeWithProgress(ctx context.Context, selectedFiles []string, template *models.Template, taskContent, rulesContent string) tea.Msg {
-	var breakdown SizeBreakdown
-	processed := 0
-	total := len(selectedFiles) + 3 // files + template + task + rules
+func calculateSizeWithProgress(ctx context.Context, selectedFiles []string, templateModel *models.Template, taskContent, rulesContent string) tea.Msg {
+	// Create template engine adapter and estimator
+	templateEngine := template.NewTemplateEngine()
+	adapter := &templateEngineAdapter{engine: templateEngine}
+	estimator := builder.NewSizeEstimator(adapter)
 
-	// Check for cancellation
-	select {
-	case <-ctx.Done():
-		return CancellationMsg{}
-	default:
+	// Prepare variables for template processing
+	variables := map[string]string{
+		"task":  taskContent,
+		"rules": rulesContent,
 	}
 
-	// Calculate template size
-	if template != nil {
-		breakdown.TemplateSize = int64(len(template.Content) + len(template.Name) + len(template.Description))
-		processed++
+	// Create estimation config
+	config := builder.EstimationConfig{
+		Template:      templateModel,
+		Variables:     variables,
+		SelectedFiles: selectedFiles,
+		IncludeTree:   true,
 	}
 
-	// Calculate task content size
-	breakdown.TreeStructSize = int64(len(taskContent))
-	processed++
-
-	// Calculate rules content size
-	breakdown.OverheadSize = int64(len(rulesContent))
-	processed++
-
-	// Calculate file content sizes
-	for i, filePath := range selectedFiles {
-		// Check for cancellation
-		select {
-		case <-ctx.Done():
-			return CancellationMsg{}
-		default:
-		}
-
-		// Send progress update
-		currentFile := fmt.Sprintf("Processing %s", filePath)
-		percentage := float64(processed+i) / float64(total)
-
-		// In a real implementation, you would read the file here
-		// For now, we'll estimate based on filename
-		estimatedSize := int64(len(filePath) * 100) // Mock estimation
-		breakdown.FileContentSize += estimatedSize
-
-		processed++
-
-		// Send progress update (would be sent via channel in real implementation)
-		if i%5 == 0 || i == len(selectedFiles)-1 { // Update every 5 files or on last file
-			_ = ProgressMsg{
-				Processed:   processed,
-				Total:       total,
-				CurrentFile: currentFile,
-				Percentage:  percentage,
-				Completed:   false,
-			}
+	// Perform estimation with progress callback
+	estimate, err := estimator.EstimatePromptSize(ctx, config)
+	if err != nil {
+		return SizeCalculationCompleteMsg{
+			Error: err,
 		}
 	}
 
-	// Final calculation complete
-	totalSize := breakdown.TemplateSize + breakdown.FileContentSize + breakdown.TreeStructSize + breakdown.OverheadSize
+	// Convert to our local SizeBreakdown struct
+	breakdown := SizeBreakdown{
+		TemplateSize:    estimate.TemplateSize,
+		FileContentSize: estimate.FileContentSize,
+		TreeStructSize:  estimate.TreeStructSize,
+		OverheadSize:    estimate.OverheadSize,
+	}
 
 	return SizeCalculationCompleteMsg{
-		TotalSize: totalSize,
+		TotalSize: estimate.TotalSize,
 		Breakdown: breakdown,
 		Error:     nil,
 	}
