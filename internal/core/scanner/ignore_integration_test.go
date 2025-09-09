@@ -76,9 +76,16 @@ coverage.txt
 			continue
 		}
 
+		// Skip directories, only count files
+		if result.FileNode.IsDirectory {
+			continue
+		}
+
 		// Convert to relative path for easier testing
 		relPath, _ := filepath.Rel(tempDir, result.FileNode.Path)
+		relPath = filepath.ToSlash(relPath) // Normalize path separators
 		foundFiles = append(foundFiles, relPath)
+		t.Logf("Found file: %s", relPath)
 	}
 
 	// Verify results
