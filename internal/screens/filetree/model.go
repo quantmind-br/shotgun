@@ -220,7 +220,7 @@ func (m *FileTreeModel) buildTreeStructure(flatNodes []*models.FileNode) []*mode
 
 		// Initialize expanded state for directories
 		if node.IsDirectory {
-			node.IsExpanded = true // Start expanded by default
+			node.IsExpanded = false // Start collapsed by default (will be expanded later for root nodes only)
 		}
 
 		// Find parent path
@@ -246,10 +246,18 @@ func (m *FileTreeModel) buildTreeStructure(flatNodes []*models.FileNode) []*mode
 			} else {
 				// Parent doesn't exist in our scan results, treat as root
 				rootNodes = append(rootNodes, node)
+				// Expand root nodes by default
+				if node.IsDirectory {
+					node.IsExpanded = true
+				}
 			}
 		} else {
 			// This is a root node
 			rootNodes = append(rootNodes, node)
+			// Expand root nodes by default
+			if node.IsDirectory {
+				node.IsExpanded = true
+			}
 		}
 	}
 
