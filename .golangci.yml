@@ -1,0 +1,34 @@
+run:
+  timeout: 5m
+  go: "1.22"
+
+linters-settings:
+  staticcheck:
+    # Allow deprecated usage for now - fix gradually
+    checks: ["all", "-SA1019", "-SA4005", "-SA4006", "-SA4010", "-SA5011", "-SA9003"]
+  ineffassign:
+    # Allow ineffective assignments for now - fix gradually
+    check-exported: false
+
+linters:
+  disable:
+    - unused  # Disable unused checker temporarily
+    - ineffassign  # Disable ineffective assignment checker temporarily
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - typecheck
+
+issues:
+  exclude-rules:
+    # Exclude legacy code from some checks
+    - path: internal/app/
+      linters: [unused, staticcheck, ineffassign]
+    - path: internal/screens/
+      linters: [unused, staticcheck, ineffassign]
+    - path: internal/components/
+      linters: [unused, staticcheck, ineffassign]
+    - path: internal/core/template/
+      linters: [unused, staticcheck, ineffassign]

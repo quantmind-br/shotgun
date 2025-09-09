@@ -3,7 +3,6 @@ package scanner
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime"
 	"time"
 
@@ -116,48 +115,3 @@ func (s *Scanner) ScanDirectorySync(ctx context.Context, rootPath string) ([]*mo
 	return results, nil
 }
 
-// processPath processes a single file or directory path
-func (s *Scanner) processPath(ctx context.Context, path string, resultChan chan<- ScanResult) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-
-	// Get file info
-	info, err := os.Lstat(path) // Use Lstat to not follow symlinks
-	if err != nil {
-		select {
-		case resultChan <- ScanResult{Error: fmt.Errorf("failed to stat %s: %w", path, err)}:
-		case <-ctx.Done():
-		}
-		return
-	}
-
-	// Handle symbolic links
-	if info.Mode()&os.ModeSymlink != 0 && !s.options.FollowSymlinks {
-		// Skip symbolic links if not following them
-		return
-	}
-
-	// Create FileNode
-	node := &models.FileNode{
-		Path:        path,
-		Name:        info.Name(),
-		IsDirectory: info.IsDir(),
-		Size:        info.Size(),
-		ModTime:     info.ModTime(),
-		IsIgnored:   s.ignorer != nil && s.ignorer.IsIgnored(path),
-	}
-
-	// Detect binary files for regular files
-	if !node.IsDirectory && s.options.DetectBinary && s.detector != nil {
-		node.IsBinary = s.detector.IsBinary(path)
-	}
-
-	// Send result
-	select {
-	case resultChan <- ScanResult{FileNode: node}:
-	case <-ctx.Done():
-	}
-}
