@@ -30,8 +30,8 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("enter", "edit selected section"),
 		),
 		Generate: key.NewBinding(
-			key.WithKeys("ctrl+enter"),
-			key.WithHelp("Ctrl+Enter", "generate prompt"),
+			key.WithKeys("alt+c"),
+			key.WithHelp("Alt+C", "generate prompt"),
 		),
 		VimUp: key.NewBinding(
 			key.WithKeys("k"),

@@ -14,16 +14,15 @@ import (
 
 // StartGenerationCmd starts the async prompt generation process
 func StartGenerationCmd(config builder.GenerationConfig) tea.Cmd {
-	return func() tea.Msg {
-		generator := builder.NewPromptGenerator()
+	generator := builder.NewPromptGenerator()
 
-		// Create progress callback that sends progress messages
-		progressCallback := func(stage string, progress float64) {
-			// This would ideally send progress updates, but we'll handle it in the async command
-		}
-
-		return generator.GenerateAsync(config, progressCallback)
+	// Create progress callback that sends progress messages
+	progressCallback := func(stage string, progress float64) {
+		// Progress callback for UI updates
 	}
+
+	// Return the command directly from GenerateAsync
+	return generator.GenerateAsync(config, progressCallback)
 }
 
 // WritePromptToFileCmd writes the generated prompt to a file

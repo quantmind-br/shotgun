@@ -12,14 +12,14 @@ import (
 
 // Init implements tea.Model interface
 func (a *AppState) Init() tea.Cmd {
-    // Initialize the first screen (FileTree)
-    return tea.Batch(
-        a.InitScreenCmd(),
-        a.FileTree.Init(),
-        // Auto-start file scanning for the initial screen
-        a.FileTree.StartScanning(),
-        a.FileTree.LoadFromScanner(a.ctx, "."),
-    )
+	// Initialize the first screen (FileTree)
+	return tea.Batch(
+		a.InitScreenCmd(),
+		a.FileTree.Init(),
+		// Auto-start file scanning for the initial screen
+		a.FileTree.StartScanning(),
+		a.FileTree.LoadFromScanner(a.ctx, "."),
+	)
 }
 
 // Update implements tea.Model interface
@@ -40,19 +40,19 @@ func (a *AppState) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a.handleExitDialog(msg)
 		}
 
-    // Check for global keys (robust to platform-specific key types)
-    if IsGlobalKey(normalizeKey(msg)) || isFunctionKeyMsg(msg) {
-        return a.GlobalKeyHandler(msg)
-    }
+		// Check for global keys (robust to platform-specific key types)
+		if IsGlobalKey(normalizeKey(msg)) || isFunctionKeyMsg(msg) {
+			return a.GlobalKeyHandler(msg)
+		}
 
-    // Screen-specific shortcuts (non-text screens can also use plain Enter)
-    // FileTree: Ctrl+Enter (and Enter on some terminals) advances if files are selected
-    if a.CurrentScreen == FileTreeScreen && (normalizeKey(msg) == "ctrl+enter" || normalizeKey(msg) == "enter") {
-        if a.canGoToNextScreen() {
-            return a.goToNextScreen()
-        }
-        return a, nil
-    }
+		// Screen-specific shortcuts (non-text screens can also use plain Enter)
+		// FileTree: Alt+C (and Enter on some terminals) advances if files are selected
+		if a.CurrentScreen == FileTreeScreen && (normalizeKey(msg) == "alt+c" || normalizeKey(msg) == "enter") {
+			if a.canGoToNextScreen() {
+				return a.goToNextScreen()
+			}
+			return a, nil
+		}
 
 		// Let current screen handle the key
 		return a.handleScreenInput(msg)
@@ -166,6 +166,24 @@ func (a *AppState) handleScreenMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.SetCurrentScreen(ConfirmScreen)
 		}
 
+	case ConfirmScreen:
+		updatedModel, cmd := a.Confirmation.Update(msg)
+		a.Confirmation = updatedModel
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		// Handle confirmation screen specific messages
+		switch msg.(type) {
+		case confirm.ConfirmGenerationMsg:
+			// Confirm and proceed to generation - removed size check to allow generation
+			if !a.Confirmation.IsCalculating() {
+				return a, a.generatePrompt()
+			}
+		case confirm.NavigateToRulesMsg:
+			a.SetCurrentScreen(RulesScreen)
+		}
+
 	case GenerateScreen:
 		updatedModel, cmd := a.Generation.Update(msg)
 		a.Generation = updatedModel
@@ -233,24 +251,6 @@ func (a *AppState) handleConfirmationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 	// Handle confirmation screen updates
 	updatedModel, cmd := a.Confirmation.Update(msg)
 	a.Confirmation = updatedModel
-
-	// Handle navigation messages
-	switch msg.String() {
-	case "f2":
-		// Return to rules screen
-		a.SetCurrentScreen(RulesScreen)
-		return a, nil
-	case "f1":
-		// Return to file tree screen
-		a.SetCurrentScreen(FileTreeScreen)
-		return a, nil
-	case "f10":
-		// Confirm and proceed to generation
-		if !a.Confirmation.IsCalculating() && a.Confirmation.GetEstimatedSize() > 0 {
-			// TODO: Trigger prompt generation
-			return a, a.generatePrompt()
-		}
-	}
 
 	return a, cmd
 }

@@ -60,11 +60,13 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 		// Handle clipboard operation errors
 		m.SetError(msg.Error)
 
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "ctrl+enter":
-            // Validate content and advance if valid
-            if m.CanAdvance() {
+	case tea.KeyMsg:
+		keyStr := msg.String()
+
+		// ABSOLUTELY CRITICAL: Intercept alt+c before ANYTHING else
+		if keyStr == "alt+c" {
+			// Validate content and advance if valid
+			if m.CanAdvance() {
 				// Clear any previous errors
 				m.SetError(nil)
 				// Send message to advance to next screen
@@ -75,36 +77,53 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 				// Set validation error
 				m.SetError(errors.New("task description cannot be empty"))
 			}
+			// CRITICAL: Return immediately, bypass ALL textarea processing
+			return m, tea.Batch(cmds...)
+		}
 
-        case "ctrl+left":
-            // Return to template screen with state preservation
-            cmds = append(cmds, func() tea.Msg {
-                return BackToTemplateMsg{}
-            })
+		// Also try with alternative representations
+		if len(keyStr) > 5 { // modifier + key
+			if keyStr == "alt+c" {
+				// Same logic as above
+				if m.CanAdvance() {
+					m.SetError(nil)
+					cmds = append(cmds, func() tea.Msg {
+						return TaskInputMsg{}
+					})
+				} else {
+					m.SetError(errors.New("task description cannot be empty"))
+				}
+				return m, tea.Batch(cmds...)
+			}
+		}
+
+		// Handle other control keys
+		switch keyStr {
+		case "ctrl+left":
+			cmds = append(cmds, func() tea.Msg {
+				return BackToTemplateMsg{}
+			})
+			return m, tea.Batch(cmds...)
 
 		case "ctrl+c":
-			// Copy selected text to clipboard
-			// Note: For now, we'll copy all content since selection API is not available
 			content := m.textarea.Value()
 			if content != "" {
 				cmds = append(cmds, func() tea.Msg {
 					return ClipboardCopyMsg{Text: content}
 				})
 			}
+			return m, tea.Batch(cmds...)
 
 		case "ctrl+v":
-			// Initiate clipboard paste operation
 			cmds = append(cmds, func() tea.Msg {
-				// This would be handled by the app layer to perform actual clipboard access
-				return ClipboardPasteMsg{Text: ""} // Placeholder - actual text comes from clipboard
+				return ClipboardPasteMsg{Text: ""}
 			})
+			return m, tea.Batch(cmds...)
 
 		default:
-			// Let the textarea handle other keys (typing, cursor movement, etc.)
+			// Pass everything else to textarea
 			m.textarea, cmd = m.textarea.Update(msg)
 			cmds = append(cmds, cmd)
-
-			// Update counters after text changes
 			m.updateCounters()
 		}
 
@@ -112,12 +131,10 @@ func (m TaskInputModel) Update(msg tea.Msg) (TaskInputModel, tea.Cmd) {
 		// Update textarea with other messages
 		m.textarea, cmd = m.textarea.Update(msg)
 		cmds = append(cmds, cmd)
-
-		// Update counters after potential text changes
 		m.updateCounters()
 	}
 
-    return m, tea.Batch(cmds...)
+	return m, tea.Batch(cmds...)
 }
 
 // (No enhanced key handler required on Bubble Tea v1.x)

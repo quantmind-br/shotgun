@@ -168,63 +168,46 @@ func (pg *PromptGenerator) GeneratePrompt(ctx context.Context, config Generation
 
 // GenerateAsync performs prompt generation asynchronously with progress updates
 func (pg *PromptGenerator) GenerateAsync(config GenerationConfig, callback GenerationProgressCallback) tea.Cmd {
-	return tea.Cmd(func() tea.Msg {
-		ctx, cancel := context.WithCancel(context.Background())
+	return func() tea.Msg {
+		// Create a context with timeout to prevent infinite hanging
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Create a channel to handle cancellation
-		done := make(chan struct{})
-		var result *GeneratedPrompt
-		var err error
+		// Report progress through callback if provided
+		if callback != nil {
+			callback(string(StageProcessingTemplate), 0.0)
+		}
 
-		go func() {
-			defer close(done)
+		// Step 1: Template processing (25% progress)
+		if callback != nil {
+			callback(string(StageProcessingTemplate), 0.25)
+		}
 
-			// Report progress through callback if provided
-			if callback != nil {
-				callback(string(StageProcessingTemplate), 0.0)
-			}
+		// Step 2: File loading (50% progress)
+		if callback != nil {
+			callback(string(StageLoadingFiles), 0.50)
+		}
 
-			// Step 1: Template processing (25% progress)
-			if callback != nil {
-				callback(string(StageProcessingTemplate), 0.25)
-			}
+		// Step 3: Structure assembly (75% progress)
+		if callback != nil {
+			callback(string(StageAssemblingStructure), 0.75)
+		}
 
-			// Step 2: File loading (50% progress)
-			if callback != nil {
-				callback(string(StageLoadingFiles), 0.50)
-			}
+		// Generate the prompt synchronously
+		result, err := pg.GeneratePrompt(ctx, config)
 
-			// Step 3: Structure assembly (75% progress)
-			if callback != nil {
-				callback(string(StageAssemblingStructure), 0.75)
-			}
-
-			// Generate the prompt
-			result, err = pg.GeneratePrompt(ctx, config)
-
-			// Step 4: Complete (100% progress)
-			if callback != nil {
-				if err != nil {
-					callback("Generation failed", 0.75)
-				} else {
-					callback(string(StageComplete), 1.0)
-				}
-			}
-		}()
-
-		// Wait for completion or cancellation
-		select {
-		case <-done:
-			return GenerationCompleteMsg{
-				Result: result,
-				Error:  err,
-			}
-		case <-ctx.Done():
-			return GenerationCompleteMsg{
-				Result: nil,
-				Error:  ctx.Err(),
+		// Step 4: Complete (100% progress)
+		if callback != nil {
+			if err != nil {
+				callback("Generation failed", 0.75)
+			} else {
+				callback(string(StageComplete), 1.0)
 			}
 		}
-	})
+
+		return GenerationCompleteMsg{
+			Result: result,
+			Error:  err,
+		}
+	}
 }

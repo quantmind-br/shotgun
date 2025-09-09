@@ -42,6 +42,9 @@ func NewTaskInputModel() TaskInputModel {
 	ta.SetWidth(80)
 	ta.SetHeight(10)
 
+	// Enable basic newline functionality
+	ta.KeyMap.InsertNewline.SetEnabled(true)
+
 	vp := viewport.New(80, 15)
 
 	return TaskInputModel{

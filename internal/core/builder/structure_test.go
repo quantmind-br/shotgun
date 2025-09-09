@@ -305,7 +305,7 @@ func TestFileStructureBuilder_GenerateStructure_LargeFiles(t *testing.T) {
 
 	builder := NewFileStructureBuilder()
 	// Set small limit for testing
-	builder.SetMaxFileSize(10)
+	_ = builder.SetMaxFileSize(10)
 
 	// Create large file content (> 10 bytes)
 	largeContent := strings.Repeat("A", 20)
@@ -373,7 +373,7 @@ func TestFileStructureBuilder_ConcurrentFileReading(t *testing.T) {
 	defer cleanup()
 
 	builder := NewFileStructureBuilder()
-	builder.SetMaxConcurrency(2) // Test with limited concurrency
+	_ = builder.SetMaxConcurrency(2) // Test with limited concurrency
 	ctx := context.Background()
 
 	// Get all test files
@@ -559,9 +559,9 @@ func TestFileStructureBuilder_ThreadSafety(t *testing.T) {
 			defer func() { done <- true }()
 
 			// Concurrent configuration updates
-			builder.SetMaxFileSize(int64(1024 * (id + 1)))
-			builder.SetMaxConcurrency(id + 1)
-			builder.SetTreeFormat(TreeFormat{
+			_ = builder.SetMaxFileSize(int64(1024 * (id + 1)))
+			_ = builder.SetMaxConcurrency(id + 1)
+			_ = builder.SetTreeFormat(TreeFormat{
 				UseUnicode: id%2 == 0,
 				ShowSizes:  id%3 == 0,
 			})

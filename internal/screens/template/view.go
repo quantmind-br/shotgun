@@ -239,12 +239,12 @@ func (m TemplateModel) buildHelpText() string {
 	helpParts = append(helpParts, "↑↓/jk: navigate")
 
 	// Selection
-    if m.selected != nil {
-        helpParts = append(helpParts, "Enter: select")
-    }
+	if m.selected != nil {
+		helpParts = append(helpParts, "Enter: select")
+	}
 
 	// Back
-    helpParts = append(helpParts, "Ctrl+Left: back")
+	helpParts = append(helpParts, "Ctrl+Left: back")
 
 	// Refresh
 	helpParts = append(helpParts, "Ctrl+R: refresh")
@@ -255,7 +255,7 @@ func (m TemplateModel) buildHelpText() string {
 	}
 
 	// Quit
-    helpParts = append(helpParts, "Ctrl+Q: quit")
+	helpParts = append(helpParts, "Ctrl+Q: quit")
 
 	return strings.Join(helpParts, " • ")
 }

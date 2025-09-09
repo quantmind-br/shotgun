@@ -1,0 +1,12 @@
+{
+  "allowedToolsForActiveDirectory": {
+    "Bash": true,
+    "Edit": true,
+    "Read": true,
+    "Write": true,
+    "Glob": true,
+    "Grep": true,
+    "WebFetch": true,
+    "Task": true
+  }
+}

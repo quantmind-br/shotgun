@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"time"
 
@@ -115,47 +114,6 @@ func (s *Scanner) ScanDirectorySync(ctx context.Context, rootPath string) ([]*mo
 	}
 
 	return results, nil
-}
-
-// scanDirectoryRecursive performs the actual directory scanning
-func (s *Scanner) scanDirectoryRecursive(ctx context.Context, rootPath string, resultChan chan<- ScanResult) {
-	// Use a simple approach: walk the directory and process files directly
-	err := filepath.WalkDir(rootPath, func(path string, d os.DirEntry, err error) error {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		if err != nil {
-			// Send error to result channel and continue
-			select {
-			case resultChan <- ScanResult{Error: fmt.Errorf("failed to access %s: %w", path, err)}:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-			return nil // Continue walking
-		}
-
-		// Check if path should be ignored
-		if s.ignorer != nil && s.ignorer.IsIgnored(path) {
-			if d.IsDir() {
-				return filepath.SkipDir // Skip entire directory
-			}
-			return nil // Skip this file
-		}
-
-		// Process the path
-		s.processPath(ctx, path, resultChan)
-		return nil
-	})
-
-	if err != nil && err != context.Canceled {
-		select {
-		case resultChan <- ScanResult{Error: fmt.Errorf("directory walk failed: %w", err)}:
-		case <-ctx.Done():
-		}
-	}
 }
 
 // processPath processes a single file or directory path

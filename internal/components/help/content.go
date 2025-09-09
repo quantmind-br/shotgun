@@ -19,12 +19,12 @@ func GetHelpContent(screen ScreenType) []HelpItem {
 	case TaskScreen:
 		return []HelpItem{
 			{"Tab", "Navigate between fields", TaskScreen},
-			{"Ctrl+Enter", "Advance to next screen", TaskScreen},
+			{"Alt+C", "Advance to next screen", TaskScreen},
 		}
 	case RulesScreen:
 		return []HelpItem{
 			{"Tab", "Navigate between fields", RulesScreen},
-			{"Ctrl+Enter", "Advance to next screen", RulesScreen},
+			{"Alt+C", "Advance to next screen", RulesScreen},
 		}
 	case ConfirmScreen:
 		return []HelpItem{

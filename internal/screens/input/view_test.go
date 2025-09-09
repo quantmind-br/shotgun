@@ -30,7 +30,7 @@ func TestTaskInputModel_ViewBasic(t *testing.T) {
 		t.Error("expected view to contain character count")
 	}
 
-	if !strings.Contains(view, "Ctrl+Enter") {
+	if !strings.Contains(view, "Alt+C") {
 		t.Error("expected view to contain keyboard shortcuts")
 	}
 }
@@ -107,7 +107,7 @@ func TestTaskInputModel_ViewKeyboardShortcuts(t *testing.T) {
 	view := model.View()
 
 	shortcuts := []string{
-		"Ctrl+Enter",
+		"Alt+C",
 		"Ctrl+Left:",
 		"Ctrl+C:",
 		"Ctrl+V:",
@@ -164,7 +164,7 @@ func TestTaskInputModel_ViewConsistentLayout(t *testing.T) {
 		if !strings.Contains(view, "Characters:") {
 			t.Errorf("%s: expected character count", label)
 		}
-		if !strings.Contains(view, "Ctrl+Enter") {
+		if !strings.Contains(view, "Alt+C") {
 			t.Errorf("%s: expected keyboard shortcuts", label)
 		}
 	}

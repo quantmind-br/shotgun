@@ -133,10 +133,10 @@ func (a *AppState) renderError() string {
 }
 
 func (a *AppState) renderNavigationHelp() string {
-    help := "Ctrl+H: Help • Ctrl+Left: Previous • Ctrl+Enter: Next • Ctrl+Q/ESC: Exit"
-    return lipgloss.NewStyle().
-        Foreground(lipgloss.Color("8")). // Gray
-        Render(help)
+	help := "Ctrl+H: Help • Ctrl+Left: Previous • Alt+C: Next • Ctrl+Q/ESC: Exit"
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")). // Gray
+		Render(help)
 }
 
 // Styling functions

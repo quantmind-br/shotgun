@@ -90,12 +90,12 @@ func (m TaskInputModel) renderMain() string {
 	sections = append(sections, countDisplay)
 
 	// Help text for keyboard shortcuts
-    helpText := []string{
-        "Ctrl+Enter: Continue (if content is not empty)",
-        "Ctrl+Left: Back to Template Selection",
-        "Ctrl+C: Copy selected text",
-        "Ctrl+V: Paste from clipboard",
-    }
+	helpText := []string{
+		"Alt+C: Continue (if content is not empty)",
+		"Ctrl+Left: Back to Template Selection",
+		"Ctrl+C: Copy selected text",
+		"Ctrl+V: Paste from clipboard",
+	}
 	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 
@@ -137,12 +137,12 @@ func (m TaskInputModel) renderError() string {
 	sections = append(sections, countDisplay)
 
 	// Help text
-    helpText := []string{
-        "Ctrl+Enter: Continue (if content is not empty)",
-        "Ctrl+Left: Back to Template Selection",
-        "Ctrl+C: Copy selected text",
-        "Ctrl+V: Paste from clipboard",
-    }
+	helpText := []string{
+		"Alt+C: Continue (if content is not empty)",
+		"Ctrl+Left: Back to Template Selection",
+		"Ctrl+C: Copy selected text",
+		"Ctrl+V: Paste from clipboard",
+	}
 	help := helpStyle.Width(m.width - 4).Render(strings.Join(helpText, " • "))
 	sections = append(sections, help)
 

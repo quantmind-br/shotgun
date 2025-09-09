@@ -166,7 +166,7 @@ func (b *FileStructureBuilder) GenerateStructure(ctx context.Context, files []st
 	// Build tree structure from file paths
 	tree := b.buildDirectoryTree(files)
 
-	// Pre-load all file contents concurrently
+	// Pre-load all file contents
 	fileContents, err := b.readAllFilesConcurrently(ctx, files)
 	if err != nil {
 		return "", fmt.Errorf("failed to read file contents: %w", err)
@@ -189,52 +189,37 @@ func (b *FileStructureBuilder) readAllFilesConcurrently(ctx context.Context, fil
 		return nil, ctx.Err()
 	}
 
-	b.mu.RLock()
-	workers := b.maxConcurrency
-	b.mu.RUnlock()
-
-	// Create channels
-	filePaths := make(chan string, len(files))
-	results := make(chan fileContent, len(files))
-
-	// Start worker pool
-	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go b.fileReader(ctx, filePaths, results, &wg)
-	}
-
-	// Send file paths to workers
-	go func() {
-		defer close(filePaths)
-		for _, file := range files {
-			select {
-			case filePaths <- file:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	// Wait for all workers to complete
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	// Collect results with context cancellation support
+	// Simplified version: read files sequentially instead of concurrently
 	fileContents := make(map[string]fileContent)
-	for {
+
+	for _, filePath := range files {
+		// Check context before each file
 		select {
-		case result, ok := <-results:
-			if !ok {
-				return fileContents, nil
-			}
-			fileContents[result.path] = result
 		case <-ctx.Done():
 			return nil, ctx.Err()
+		default:
+		}
+
+		// Read file content using the existing readFileContent method
+		content, err := b.readFileContent(ctx, filePath)
+		if err != nil {
+			// Skip files that can't be read instead of failing completely
+			fileContents[filePath] = fileContent{
+				path:    filePath,
+				content: "",
+				err:     err,
+			}
+			continue
+		}
+
+		fileContents[filePath] = fileContent{
+			path:    filePath,
+			content: content,
+			err:     nil,
 		}
 	}
+
+	return fileContents, nil
 }
 
 // fileReader is a worker that reads files from the channel

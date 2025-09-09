@@ -213,7 +213,7 @@ func TestBinaryDetector_IsBinary_PermissionDenied(t *testing.T) {
 	if err := os.Chmod(unreadableFile, 0000); err != nil {
 		t.Fatalf("failed to change permissions: %v", err)
 	}
-	defer os.Chmod(unreadableFile, 0644) // Restore for cleanup
+	defer func() { _ = os.Chmod(unreadableFile, 0644) }() // Restore for cleanup
 
 	// Should return false when can't read file
 	result := detector.IsBinary(unreadableFile)

@@ -23,8 +23,8 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("shift+tab", "navigate backwards"),
 		),
 		Submit: key.NewBinding(
-			key.WithKeys("ctrl+enter"),
-			key.WithHelp("ctrl+enter", "advance to next screen"),
+			key.WithKeys("alt+c"),
+			key.WithHelp("alt+c", "advance to next screen"),
 		),
 		Help: key.NewBinding(
 			key.WithKeys("?"),

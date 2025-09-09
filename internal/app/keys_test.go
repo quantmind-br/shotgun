@@ -198,7 +198,7 @@ func TestGoToNextScreen_AllScreens(t *testing.T) {
 			FileTreeScreen,
 			FileTreeScreen, // Won't advance because FileTree.GetSelectedFiles() returns empty
 			func(a *AppState) {
-				// Can't easily mock FileTree.GetSelectedFiles() 
+				// Can't easily mock FileTree.GetSelectedFiles()
 				// so this test will fail validation
 				a.SelectedFiles = []string{"/test/file1.txt"}
 			},
@@ -279,4 +279,3 @@ func TestGoToNextScreen_FinalScreen(t *testing.T) {
 		t.Errorf("Expected to remain on ConfirmScreen, got %v", appModel.CurrentScreen)
 	}
 }
-

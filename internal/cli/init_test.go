@@ -84,7 +84,7 @@ func TestCreateShotgunignore(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer os.Chdir(originalWd)
+			defer func() { _ = os.Chdir(originalWd) }()
 
 			if err := os.Chdir(tempDir); err != nil {
 				t.Fatal(err)
@@ -146,7 +146,7 @@ func TestValidateDirectory(t *testing.T) {
 					t.Skip("Cannot create read-only directory on this system")
 				}
 				t.Cleanup(func() {
-					os.Chmod(tempDir, 0755) // Restore permissions for cleanup
+					_ = os.Chmod(tempDir, 0755) // Restore permissions for cleanup
 				})
 				return tempDir
 			},
@@ -164,7 +164,7 @@ func TestValidateDirectory(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer os.Chdir(originalWd)
+			defer func() { _ = os.Chdir(originalWd) }()
 
 			if err := os.Chdir(testDir); err != nil {
 				if tt.expectError && strings.Contains(err.Error(), "permission denied") {
